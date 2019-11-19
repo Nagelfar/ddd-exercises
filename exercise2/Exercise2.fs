@@ -81,24 +81,14 @@ let iterate (state: State) =
         step state
         state.CurrentTime <- state.CurrentTime + 1
 
-let findLatestDelivery (state: State) = state.CargoDelivered |> Seq.maxBy (fun (_, t) -> t)
+let findLatestDelivery (state: State) = 
+    state.CargoDelivered 
+    |> Seq.maxBy (fun (_, t) -> t)
+    |> snd
 
-let parseInput (input: string []) =
-    match input with
-    | [| singleArgument |] ->
-        singleArgument.ToCharArray()
-        |> Seq.map (function
-            | 'A' -> A
-            | 'B' -> B
-            | x -> failwithf "Unknown cargo %c" x)
-    | x -> failwithf "Expecting a single string containing the cargo list but got %A" x
-
-[<EntryPoint>]
-let main argv =
-    printfn "%A" argv
-    let cargo = 
-        parseInput argv
-        |> Seq.toList
+let buildInitialState cargo =
+    let initialCargo =
+        cargo
         |> List.map(fun c -> CargoReadyForDelivery c, 0)
 
     let initialTrucks = 
@@ -117,11 +107,34 @@ let main argv =
           CargoWaitingForPickupAtPort = 0
           }
 
-    Seq.concat [cargo ; initialTrucks]
-    |> Seq.iter (update state)    
+    Seq.concat [initialCargo ; initialTrucks]
+    |> Seq.iter (update state) 
 
-    iterate state
-    let highest = findLatestDelivery state
-    printfn "Highest time %A" highest
+    state
 
-    0 // return an integer exit code
+module Program =
+
+    let parseInput (input: string []) =
+        match input with
+        | [| singleArgument |] ->
+            singleArgument.ToCharArray()
+            |> Seq.map (function
+                | 'A' -> A
+                | 'B' -> B
+                | x -> failwithf "Unknown cargo %c" x)
+        | x -> failwithf "Expecting a single string containing the cargo list but got %A" x
+
+    [<EntryPoint>]
+    let main argv =
+        printfn "%A" argv
+        let cargo = 
+            parseInput argv
+            |> Seq.toList
+
+        let state = buildInitialState cargo
+
+        iterate state
+        let highest = findLatestDelivery state
+        printfn "Highest time %A" highest
+
+        0 // return an integer exit code
