@@ -1,0 +1,36 @@
+# For information on directives in .gitattributes you can go here: http://schacon.github.io/git/gitattributes.html
+* text=auto eol=lf
+
+# Windows specific files that expect line endings with crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Following files are treated as text and will be normalized on write to the repo (CRLF -> LF)
+.gitattributes text eol=lf
+.gitconfig text eol=lf
+.gitignore text eol=lf
+
+*.cs text eol=lf diff=csharp
+*.csproj text eol=lf
+*.msbuild text eol=lf
+*.sln text eol=lf
+*.sln.DotSettings text eol=lf
+*.xaml text eol=lf
+
+*.fsx text eol=lf
+*.htm text eol=lf
+*.js  text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.md text eol=lf
+*.scss text eol=lf
+*.vue text eol=lf
+
+# Binary file types
+*.dll  binary
+*.exe  binary
+*.jepg binary
+*.nupkg binary
+*.png binary
+*.sdf  binary
