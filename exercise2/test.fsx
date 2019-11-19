@@ -11,7 +11,7 @@ let test cargo expected =
     if highest = expected then
         printfn "For cargo %A: got expected time %A" cargo highest
     else
-        eprintfn "For cargo %A: expected time %A but got %A" cargo expected highest    
+        eprintfn "FAILING: For cargo %A: expected time %A but got %A" cargo expected highest
 
 
 test [A;] 5

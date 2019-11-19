@@ -19,8 +19,8 @@ type Timepoint = int
 type Event =
     | CargoReadyForDelivery of Cargo
     | ArrivedBack of Vehicle * Location
-    | ParkedShipmentAtPort
-    | PickedUpShipmentAtPort
+    | ParkedShipment of Cargo * Location
+    | PickedUpShipment of Cargo * Location
     | DeliveredShipment of Cargo
 
 type Entry = Event * Timepoint
@@ -39,10 +39,13 @@ let update (state: State) event =
     | ArrivedBack(Truck t, Factory), time when state.TrucksAtFactory.ContainsKey time -> state.TrucksAtFactory.[time].Enqueue t
     | ArrivedBack(Truck t, Factory), time -> state.TrucksAtFactory <- state.TrucksAtFactory.Add(time, Queue [ t ])
     | ArrivedBack(Ship, Port), time -> state.ShipWaitingAtPort <- time
-    | ArrivedBack(_),time -> ()
-    | ParkedShipmentAtPort, _ -> state.CargoWaitingForPickupAtPort <- state.CargoWaitingForPickupAtPort + 1
-    | DeliveredShipment c, time -> state.CargoDelivered.Add(c, time)
-    | PickedUpShipmentAtPort, _ -> state.CargoWaitingForPickupAtPort <- state.CargoWaitingForPickupAtPort - 1
+    | ArrivedBack(_), _ -> ()
+    | ParkedShipment(_, Port), _ -> state.CargoWaitingForPickupAtPort <- state.CargoWaitingForPickupAtPort + 1
+    | ParkedShipment _ ,_ -> ()
+    | DeliveredShipment (c), time -> state.CargoDelivered.Add(c, time)
+    | DeliveredShipment _, _ -> ()
+    | PickedUpShipment(_ , Port), _ -> state.CargoWaitingForPickupAtPort <- state.CargoWaitingForPickupAtPort - 1
+    | PickedUpShipment _, _ -> ()
 
 let moveCargoFromFactory state =
     state.TrucksAtFactory
@@ -52,10 +55,10 @@ let moveCargoFromFactory state =
         |> Seq.collect(fun (c, truck) -> 
             match c with
             | A ->
-                [ Entry(ParkedShipmentAtPort, state.CurrentTime + 1)
+                [ Entry(ParkedShipment(A,Port), state.CurrentTime + 1)
                   Entry(ArrivedBack(Truck truck, Factory), state.CurrentTime + 2) ]
             | B ->
-                [ Entry(DeliveredShipment B, state.CurrentTime + 5)
+                [ Entry(DeliveredShipment (B), state.CurrentTime + 5)
                   Entry(ArrivedBack(Truck truck, Factory), state.CurrentTime + 10) ]
             )
     )
@@ -64,8 +67,8 @@ let moveCargoFromFactory state =
 
 let moveCargoFromPort state =
     if state.ShipWaitingAtPort <= state.CurrentTime && state.CargoWaitingForPickupAtPort > 0 then   
-        [ Entry(PickedUpShipmentAtPort, state.CurrentTime)
-          Entry(DeliveredShipment A, state.CurrentTime + 4)
+        [ Entry(PickedUpShipment(A, Port), state.CurrentTime)
+          Entry(DeliveredShipment (A), state.CurrentTime + 4)
           Entry(ArrivedBack(Ship, Port), state.CurrentTime + 8) ]
     else []
 
