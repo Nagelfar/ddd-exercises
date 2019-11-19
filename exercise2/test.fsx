@@ -3,11 +3,11 @@
 open Exercise2
 
 let test cargo expected =
-    let state = buildInitialState cargo
-
-    iterate state
-
-    let highest = findLatestDelivery state
+    let highest =
+        cargo
+        |> buildInitialState
+        |> iterate
+        |> findLatestDelivery
     if highest = expected then
         printfn "For cargo %A: got expected time %A" cargo highest
     else
