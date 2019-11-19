@@ -2,12 +2,14 @@ module Exercise2
 
 open System.Collections.Generic
 
-type Cargo = A | B
+type Destination = A | B
 
+type CargoIdentifier = Identifier of int
+type Cargo =  CargoIdentifier * Destination
 type Location =
     | Factory
     | Port
-    | Warehouse of Cargo
+    | Warehouse of Destination
 
 type Truck = T1 | T2
 type Vehicle =
@@ -29,7 +31,7 @@ type State =
     { mutable TrucksAtFactory: Map<Timepoint, Queue<Truck>>
       mutable ShipWaitingAtPort: Timepoint
       CargoAtFactory: Queue<Cargo>
-      mutable CargoWaitingForPickupAtPort: int
+      CargoWaitingForPickupAtPort: Queue<Cargo>
       mutable CurrentTime: Timepoint
       CargoDelivered: List<Cargo * Timepoint> }
       
@@ -40,11 +42,11 @@ let update (state: State) event =
     | ArrivedBack(Truck t, Factory), time -> state.TrucksAtFactory <- state.TrucksAtFactory.Add(time, Queue [ t ])
     | ArrivedBack(Ship, Port), time -> state.ShipWaitingAtPort <- time
     | ArrivedBack(_), _ -> ()
-    | ParkedShipment(_, Port), _ -> state.CargoWaitingForPickupAtPort <- state.CargoWaitingForPickupAtPort + 1
+    | ParkedShipment(c, Port), _ -> state.CargoWaitingForPickupAtPort.Enqueue c
     | ParkedShipment _ ,_ -> ()
     | DeliveredShipment (c), time -> state.CargoDelivered.Add(c, time)
     | DeliveredShipment _, _ -> ()
-    | PickedUpShipment(_ , Port), _ -> state.CargoWaitingForPickupAtPort <- state.CargoWaitingForPickupAtPort - 1
+    | PickedUpShipment(_ , Port), _ -> state.CargoWaitingForPickupAtPort.Dequeue |> ignore
     | PickedUpShipment _, _ -> ()
 
 let moveCargoFromFactory state =
@@ -54,11 +56,11 @@ let moveCargoFromFactory state =
         Seq.init (System.Math.Min(state.CargoAtFactory.Count, trucks.Count)) (fun _ -> (state.CargoAtFactory.Dequeue(), trucks.Dequeue()))
         |> Seq.collect(fun (c, truck) -> 
             match c with
-            | A ->
-                [ Entry(ParkedShipment(A,Port), state.CurrentTime + 1)
+            | (_, A) as c->
+                [ Entry(ParkedShipment(c,Port), state.CurrentTime + 1)
                   Entry(ArrivedBack(Truck truck, Factory), state.CurrentTime + 2) ]
-            | B ->
-                [ Entry(DeliveredShipment (B), state.CurrentTime + 5)
+            | (_,B) as c ->
+                [ Entry(DeliveredShipment (c), state.CurrentTime + 5)
                   Entry(ArrivedBack(Truck truck, Factory), state.CurrentTime + 10) ]
             )
     )
@@ -66,9 +68,10 @@ let moveCargoFromFactory state =
     |> Seq.collect id
 
 let moveCargoFromPort state =
-    if state.ShipWaitingAtPort <= state.CurrentTime && state.CargoWaitingForPickupAtPort > 0 then   
-        [ Entry(PickedUpShipment(A, Port), state.CurrentTime)
-          Entry(DeliveredShipment (A), state.CurrentTime + 4)
+    if state.ShipWaitingAtPort <= state.CurrentTime && state.CargoWaitingForPickupAtPort.Count > 0 then   
+        let cargo = state.CargoWaitingForPickupAtPort.Dequeue()
+        [ Entry(PickedUpShipment(cargo, Port), state.CurrentTime)
+          Entry(DeliveredShipment (cargo), state.CurrentTime + 4)
           Entry(ArrivedBack(Ship, Port), state.CurrentTime + 8) ]
     else []
 
@@ -80,7 +83,7 @@ let step state =
     |> Seq.iter (update state)
 
 let iterate (state: State) =
-    while state.CargoAtFactory.Count > 0 || state.CargoWaitingForPickupAtPort > 0 do
+    while state.CargoAtFactory.Count > 0 || state.CargoWaitingForPickupAtPort.Count > 0 do
         step state
         state.CurrentTime <- state.CurrentTime + 1
 
@@ -92,7 +95,7 @@ let findLatestDelivery (state: State) =
 let buildInitialState cargo =
     let initialCargo =
         cargo
-        |> List.map(fun c -> CargoReadyForDelivery c, 0)
+        |> List.mapi(fun i c -> CargoReadyForDelivery (Identifier i, c), 0)
 
     let initialTrucks = 
         [ 
@@ -107,7 +110,7 @@ let buildInitialState cargo =
           CargoDelivered = List() 
           CurrentTime = 0          
           ShipWaitingAtPort = 0
-          CargoWaitingForPickupAtPort = 0
+          CargoWaitingForPickupAtPort = Queue()
           }
 
     Seq.concat [initialCargo ; initialTrucks]
