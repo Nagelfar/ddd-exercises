@@ -3,11 +3,14 @@
 open Exercise2
 
 let test cargo expected =
-    let highest =
+    let events =
         cargo
         |> buildInitialEvents
         |> iterate
+    let highest =
+        events
         |> findLatestDelivery
+
     if highest = expected then
         printfn "For cargo %A: got expected time %A" cargo highest
     else

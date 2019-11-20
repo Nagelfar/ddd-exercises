@@ -58,12 +58,10 @@ module Domain =
 type State =
     { TrucksAtFactory: Map<Truck, Timepoint>
       CargoAtFactory: Cargo list
-      CargoWaitingForPickupAtPort: Map<Cargo, Timepoint>
       NextTransportId: TransportIdentifier }
     static member Initial =
         { TrucksAtFactory = Map.empty
           CargoAtFactory = []
-          CargoWaitingForPickupAtPort = Map.empty
           NextTransportId = Identifier(0) }
 
 let update (state: State) event =
@@ -73,10 +71,6 @@ let update (state: State) event =
     | Departing(_, Truck t, Factory, _, _), _ -> { state with TrucksAtFactory = state.TrucksAtFactory.Remove t }
     | ArrivedBack(_, Truck t, Factory), time
     | VehicleProvided(Truck t, Factory), time -> { state with TrucksAtFactory = state.TrucksAtFactory.Add(t, time) }
-    | ParkedShipment(c, Port), time ->
-        { state with CargoWaitingForPickupAtPort = state.CargoWaitingForPickupAtPort.Add(c, time) }
-    | PickedUpShipment(c, Port), _ ->
-        { state with CargoWaitingForPickupAtPort = state.CargoWaitingForPickupAtPort.Remove c }
     | PickedUpShipment(c, Factory), _ -> { state with CargoAtFactory = state.CargoAtFactory.Tail }
     | _ -> state
 
@@ -101,9 +95,24 @@ let avaliableShip time events =
     |> Seq.tryLast
     |> Option.flatten
 
+let cargoWaitingOnPort time events = 
+    events
+    |> Seq.filter (fun (_,t) -> t <= time)
+    |> Seq.map fst
+    |> Seq.fold (fun s e -> 
+        match e with
+        | ParkedShipment(c,Port) -> s @ [c]
+        | PickedUpShipment(c,Port) -> List.except [c] s
+        | _ -> s
+    ) []
+
 let moveCargoFromPort time events =
     let state = buildState events
-    let cargo = findFirstAvaliable state.CargoWaitingForPickupAtPort time
+    let cargo = 
+        events
+        |> cargoWaitingOnPort time 
+        |> List.tryHead
+
     let vehicle = avaliableShip time events
     Option.map2 (Domain.pickUpCargoAtPort time state.NextTransportId) cargo vehicle |> Option.defaultValue []
 
@@ -113,8 +122,7 @@ let moveCargoFromFactory time events =
     let vehicle = findFirstAvaliable state.TrucksAtFactory time
     Option.map2 (Domain.pickUpCargoAtFactory time state.NextTransportId) cargo vehicle |> Option.defaultValue []
 
-let isCargoWaitingOnPort time state = (findFirstAvaliable state.CargoWaitingForPickupAtPort time).IsSome
-
+    
 let step time events =
     let eventsFromPort = moveCargoFromPort time events
     let mutable mEvents = events @ eventsFromPort
@@ -134,7 +142,7 @@ let iterate intialEvents =
         events <- step time events
         time <- time + 1
         let state = buildState events
-        notFinished <- state.CargoAtFactory.Length > 0 || (isCargoWaitingOnPort time state)
+        notFinished <- state.CargoAtFactory.Length > 0 || not (cargoWaitingOnPort time events).IsEmpty
     events
 
 let findLatestDelivery events =
@@ -171,12 +179,15 @@ module Program =
         printfn "%A" argv
         let cargo = parseInput argv |> Seq.toList
 
-        let highest =
+        let events =
             cargo
             |> buildInitialEvents
             |> iterate
+        let highest =
+            events
             |> findLatestDelivery
 
         printfn "Highest time %A" highest
+        printfn "%A" events
 
         0 // return an integer exit code
