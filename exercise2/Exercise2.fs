@@ -1,8 +1,8 @@
 module Exercise2
 
 type Destination = A | B
-type CargoIdentifier = Identifier of int
 
+type CargoIdentifier = Identifier of int
 type Cargo = CargoIdentifier * Destination
 
 type Location =
@@ -10,7 +10,7 @@ type Location =
     | Port
     | Warehouse of Destination
 
-type Truck = T1| T2
+type Truck = T1 | T2
 type Vehicle =
     | Truck of Truck
     | Ship
@@ -23,7 +23,7 @@ type Event =
     | CargoReadyForDelivery of Cargo
     | VehicleProvided of Vehicle * Location
     | TransportCreated of TransportIdentifier
-    | Departing of TransportIdentifier * Vehicle * from: Location * Cargo * destination:Location
+    | Departing of TransportIdentifier * Vehicle * from: Location * Cargo * destination: Location
     | Arrived of TransportIdentifier * Vehicle * Location * Cargo
     | ArrivedBack of TransportIdentifier * Vehicle * destination: Location
     | ParkedShipment of Cargo * Location
@@ -38,15 +38,15 @@ module Domain =
         | (_, A) ->
             [ Entry(TransportCreated(transportId), time)
               Entry(PickedUpShipment(cargo, Factory), time)
-              Entry(Departing(transportId,Truck truck, Factory, cargo, Port), time)
+              Entry(Departing(transportId, Truck truck, Factory, cargo, Port), time)
               Entry(ParkedShipment(cargo, Port), time + 1)
-              Entry(ArrivedBack(transportId,Truck truck, Factory), time + 2) ]
+              Entry(ArrivedBack(transportId, Truck truck, Factory), time + 2) ]
         | (_, B) ->
             [ Entry(TransportCreated(transportId), time)
               Entry(PickedUpShipment(cargo, Factory), time)
-              Entry(Departing(transportId,Truck truck, Factory, cargo, Warehouse B), time)
+              Entry(Departing(transportId, Truck truck, Factory, cargo, Warehouse B), time)
               Entry(DeliveredShipment(cargo), time + 5)
-              Entry(ArrivedBack(transportId,Truck truck, Factory), time + 10) ]
+              Entry(ArrivedBack(transportId, Truck truck, Factory), time + 10) ]
 
     let pickUpCargoAtPort time transportId cargo ship =
         [ Entry(TransportCreated(transportId), time)
@@ -57,41 +57,30 @@ module Domain =
 
 type State =
     { TrucksAtFactory: Map<Truck, Timepoint>
-      ShipWaitingAtPort: Timepoint
       CargoAtFactory: Cargo list
       CargoWaitingForPickupAtPort: Map<Cargo, Timepoint>
-      CargoDelivered: (Cargo * Timepoint) list
       NextTransportId: TransportIdentifier }
-      with static member Initial = 
-            { TrucksAtFactory = Map.empty
-              CargoAtFactory = []
-              CargoDelivered = []
-              ShipWaitingAtPort = 0
-              CargoWaitingForPickupAtPort = Map.empty
-              NextTransportId = Identifier(0) }
+    static member Initial =
+        { TrucksAtFactory = Map.empty
+          CargoAtFactory = []
+          CargoWaitingForPickupAtPort = Map.empty
+          NextTransportId = Identifier(0) }
 
 let update (state: State) event =
     match event with
-    | TransportCreated(Identifier(id)),_ -> {state with NextTransportId = Identifier(id + 1)}
+    | TransportCreated(Identifier(id)), _ -> { state with NextTransportId = Identifier(id + 1) }
     | CargoReadyForDelivery c, _ -> { state with CargoAtFactory = state.CargoAtFactory @ [ c ] }
-    | Departing(_,Truck t, Factory, _,_), _ -> { state with TrucksAtFactory = state.TrucksAtFactory.Remove t }
-    | ArrivedBack(_,Truck t, Factory), time 
+    | Departing(_, Truck t, Factory, _, _), _ -> { state with TrucksAtFactory = state.TrucksAtFactory.Remove t }
+    | ArrivedBack(_, Truck t, Factory), time
     | VehicleProvided(Truck t, Factory), time -> { state with TrucksAtFactory = state.TrucksAtFactory.Add(t, time) }
-    | ArrivedBack(_,Ship, Port), time 
-    | VehicleProvided(Ship, Port), time -> { state with ShipWaitingAtPort = time }
-    | Arrived(_),_ -> state
     | ParkedShipment(c, Port), time ->
         { state with CargoWaitingForPickupAtPort = state.CargoWaitingForPickupAtPort.Add(c, time) }
-    | DeliveredShipment(c), time -> { state with CargoDelivered = state.CargoDelivered @ [ (c, time) ] }
     | PickedUpShipment(c, Port), _ ->
         { state with CargoWaitingForPickupAtPort = state.CargoWaitingForPickupAtPort.Remove c }
     | PickedUpShipment(c, Factory), _ -> { state with CargoAtFactory = state.CargoAtFactory.Tail }
-    | DeliveredShipment _, _ | ArrivedBack(_), _ | ParkedShipment _, _ | PickedUpShipment _, _ | Departing _, _ | VehicleProvided _,_ 
-        -> state
+    | _ -> state
 
-let buildState events =
-    events
-    |> Seq.fold update State.Initial
+let buildState events = events |> Seq.fold update State.Initial
 
 let findFirstAvaliable items time =
     items
@@ -100,34 +89,41 @@ let findFirstAvaliable items time =
     |> Seq.map fst
     |> Seq.tryHead
 
-let avaliableShip time state =
-    if state.ShipWaitingAtPort <= time then Some Ship
-    else None
+let avaliableShip time events =
+    events
+    |> Seq.filter (fun (_, t) -> t <= time)
+    |> Seq.map fst
+    |> Seq.choose (function
+        | VehicleProvided(Ship, Port)
+        | ArrivedBack(_, Ship, Port) -> Some <| Some Ship
+        | Departing(_, Ship, Port, _, _) -> Some None
+        | _ -> None)
+    |> Seq.tryLast
+    |> Option.flatten
 
-let moveCargoFromPort time state =
+let moveCargoFromPort time events =
+    let state = buildState events
     let cargo = findFirstAvaliable state.CargoWaitingForPickupAtPort time
-    let vehicle = avaliableShip time state
-    Option.map2 (Domain.pickUpCargoAtPort time state.NextTransportId) cargo vehicle
-    |> Option.defaultValue []
+    let vehicle = avaliableShip time events
+    Option.map2 (Domain.pickUpCargoAtPort time state.NextTransportId) cargo vehicle |> Option.defaultValue []
 
-let moveCargoFromFactory time state =
+let moveCargoFromFactory time events =
+    let state = buildState events
     let cargo = List.tryHead state.CargoAtFactory
     let vehicle = findFirstAvaliable state.TrucksAtFactory time
-    Option.map2 (Domain.pickUpCargoAtFactory time state.NextTransportId) cargo vehicle
-    |> Option.defaultValue []
+    Option.map2 (Domain.pickUpCargoAtFactory time state.NextTransportId) cargo vehicle |> Option.defaultValue []
 
-let isCargoWaitingOnPort time state = 
-    (findFirstAvaliable state.CargoWaitingForPickupAtPort time).IsSome
+let isCargoWaitingOnPort time state = (findFirstAvaliable state.CargoWaitingForPickupAtPort time).IsSome
 
 let step time events =
-    let eventsFromPort = moveCargoFromPort time (buildState events)
+    let eventsFromPort = moveCargoFromPort time events
     let mutable mEvents = events @ eventsFromPort
     let mutable tryMoveCargo = true
     while tryMoveCargo do
-        let eventsFromFactory = moveCargoFromFactory time (buildState mEvents)
+        let eventsFromFactory = moveCargoFromFactory time mEvents
         tryMoveCargo <- not eventsFromFactory.IsEmpty
         mEvents <- mEvents @ eventsFromFactory
-        
+
     mEvents
 
 let iterate intialEvents =
@@ -142,20 +138,21 @@ let iterate intialEvents =
     events
 
 let findLatestDelivery events =
-    let state = events |> buildState
-    state.CargoDelivered
-    |> Seq.maxBy (fun (_, t) -> t)
-    |> snd
+    events
+    |> Seq.choose (function
+        | DeliveredShipment _, t -> Some t
+        | _ -> None)
+    |> Seq.max
 
 let buildInitialEvents cargo =
-    let initialCargo = cargo |> List.mapi (fun i c -> CargoReadyForDelivery(CargoIdentifier.Identifier i, c), 0)
+    let initialCargo = cargo |> List.mapi (fun i c -> CargoReadyForDelivery(CargoIdentifier.Identifier i, c))
 
     let initialVehicles =
-        [ VehicleProvided(Truck T1, Factory), 0
-          VehicleProvided(Truck T2, Factory), 0
-          VehicleProvided(Ship, Port), 0 ]
+        [ VehicleProvided(Truck T1, Factory)
+          VehicleProvided(Truck T2, Factory)
+          VehicleProvided(Ship, Port) ]
 
-    List.concat [ initialCargo; initialVehicles ]
+    List.concat [ initialCargo; initialVehicles ] |> List.map (fun e -> e, 0)
 
 module Program =
 
