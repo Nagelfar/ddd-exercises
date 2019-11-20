@@ -5,7 +5,7 @@ open Exercise2
 let test cargo expected =
     let highest =
         cargo
-        |> buildInitialState
+        |> buildInitialEvents
         |> iterate
         |> findLatestDelivery
     if highest = expected then

@@ -60,9 +60,15 @@ type State =
       ShipWaitingAtPort: Timepoint
       CargoAtFactory: Cargo list
       CargoWaitingForPickupAtPort: Map<Cargo, Timepoint>
-      CurrentTime: Timepoint
       CargoDelivered: (Cargo * Timepoint) list
       NextTransportId: TransportIdentifier }
+      with static member Initial = 
+            { TrucksAtFactory = Map.empty
+              CargoAtFactory = []
+              CargoDelivered = []
+              ShipWaitingAtPort = 0
+              CargoWaitingForPickupAtPort = Map.empty
+              NextTransportId = Identifier(0) }
 
 let update (state: State) event =
     match event with
@@ -83,6 +89,10 @@ let update (state: State) event =
     | DeliveredShipment _, _ | ArrivedBack(_), _ | ParkedShipment _, _ | PickedUpShipment _, _ | Departing _, _ | VehicleProvided _,_ 
         -> state
 
+let buildState events =
+    events
+    |> Seq.fold update State.Initial
+
 let findFirstAvaliable items time =
     items
     |> Map.filter (fun _ v -> v <= time)
@@ -90,52 +100,54 @@ let findFirstAvaliable items time =
     |> Seq.map fst
     |> Seq.tryHead
 
-let avaliableShip state =
-    if state.ShipWaitingAtPort <= state.CurrentTime then Some Ship
+let avaliableShip time state =
+    if state.ShipWaitingAtPort <= time then Some Ship
     else None
 
+let moveCargoFromPort time state =
+    let cargo = findFirstAvaliable state.CargoWaitingForPickupAtPort time
+    let vehicle = avaliableShip time state
+    Option.map2 (Domain.pickUpCargoAtPort time state.NextTransportId) cargo vehicle
+    |> Option.defaultValue []
 
-let moveCargoFromPort state =
-    let cargo = findFirstAvaliable state.CargoWaitingForPickupAtPort state.CurrentTime
-    let vehicle = avaliableShip state
-    Option.map2 (Domain.pickUpCargoAtPort state.CurrentTime state.NextTransportId) cargo vehicle
-
-let moveCargoFromFactory state =
+let moveCargoFromFactory time state =
     let cargo = List.tryHead state.CargoAtFactory
-    let vehicle = findFirstAvaliable state.TrucksAtFactory state.CurrentTime
-    Option.map2 (Domain.pickUpCargoAtFactory state.CurrentTime state.NextTransportId) cargo vehicle
+    let vehicle = findFirstAvaliable state.TrucksAtFactory time
+    Option.map2 (Domain.pickUpCargoAtFactory time state.NextTransportId) cargo vehicle
+    |> Option.defaultValue []
 
-let isCargoWaitingOnPort state = 
-    (findFirstAvaliable state.CargoWaitingForPickupAtPort state.CurrentTime).IsSome
+let isCargoWaitingOnPort time state = 
+    (findFirstAvaliable state.CargoWaitingForPickupAtPort time).IsSome
 
-let step state =
-    let mutable mState =
-        moveCargoFromPort state
-        |> Option.toList
-        |> List.collect id
-        |> List.fold update state
+let step time events =
+    let eventsFromPort = moveCargoFromPort time (buildState events)
+    let mutable mEvents = events @ eventsFromPort
+    let mutable tryMoveCargo = true
+    while tryMoveCargo do
+        let eventsFromFactory = moveCargoFromFactory time (buildState mEvents)
+        tryMoveCargo <- not eventsFromFactory.IsEmpty
+        mEvents <- mEvents @ eventsFromFactory
+        
+    mEvents
 
-    let mutable eventsFromFactory = moveCargoFromFactory mState
-    while eventsFromFactory.IsSome do
-        let newState = eventsFromFactory.Value |> Seq.fold update mState
-        eventsFromFactory <- moveCargoFromFactory newState
-        mState <- newState
+let iterate intialEvents =
+    let mutable events: Entry list = intialEvents
+    let mutable notFinished = true
+    let mutable time = 0
+    while notFinished do
+        events <- step time events
+        time <- time + 1
+        let state = buildState events
+        notFinished <- state.CargoAtFactory.Length > 0 || (isCargoWaitingOnPort time state)
+    events
 
-    mState
-
-let iterate (initial: State) =
-    let mutable state = initial
-    while state.CargoAtFactory.Length > 0 || (isCargoWaitingOnPort state) do
-        let stepState = step state
-        state <- { stepState with CurrentTime = stepState.CurrentTime + 1 }
-    state
-
-let findLatestDelivery (state: State) =
+let findLatestDelivery events =
+    let state = events |> buildState
     state.CargoDelivered
     |> Seq.maxBy (fun (_, t) -> t)
     |> snd
 
-let buildInitialState cargo =
+let buildInitialEvents cargo =
     let initialCargo = cargo |> List.mapi (fun i c -> CargoReadyForDelivery(CargoIdentifier.Identifier i, c), 0)
 
     let initialVehicles =
@@ -143,16 +155,7 @@ let buildInitialState cargo =
           VehicleProvided(Truck T2, Factory), 0
           VehicleProvided(Ship, Port), 0 ]
 
-    let initialState =
-        { TrucksAtFactory = Map.empty
-          CargoAtFactory = []
-          CargoDelivered = []
-          CurrentTime = 0
-          ShipWaitingAtPort = 0
-          CargoWaitingForPickupAtPort = Map.empty
-          NextTransportId = Identifier(0) }
-
-    Seq.concat [ initialCargo; initialVehicles ] |> Seq.fold update initialState
+    List.concat [ initialCargo; initialVehicles ]
 
 module Program =
 
@@ -173,7 +176,7 @@ module Program =
 
         let highest =
             cargo
-            |> buildInitialState
+            |> buildInitialEvents
             |> iterate
             |> findLatestDelivery
 
