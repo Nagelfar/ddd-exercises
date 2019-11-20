@@ -9,7 +9,7 @@ let test cargo expected =
         |> iterate
     let highest =
         events
-        |> findLatestDelivery
+        |> Projections.findLatestDelivery
 
     if highest = expected then
         printfn "For cargo %A: got expected time %A" cargo highest

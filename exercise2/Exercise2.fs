@@ -55,69 +55,71 @@ module Domain =
           Entry(DeliveredShipment(cargo), time + 4)
           Entry(ArrivedBack(transportId, ship, Port), time + 8) ]
 
-let nextTransportId events =
-    events
-    |> Seq.map fst
-    |> Seq.choose (function
-    | TransportCreated(Identifier id) -> Some id
-    | _ -> None)
-    |> Seq.tryLast
-    |> Option.defaultValue 0
-    |> Identifier
+module Projections =
+    let findLatestDelivery events =
+        events
+        |> Seq.choose (function
+            | DeliveredShipment _, t -> Some t
+            | _ -> None)
+        |> Seq.max
 
-let filterUntilNow time events =
-    events
-    |> Seq.filter (fun (_, t) -> t <= time)
-    |> Seq.map fst
-
-let trucksAtFactory time events =
-    events
-    |> filterUntilNow time
-    |> Seq.fold (fun s e ->
-        match e with
-        | Departing(_, Truck t, Factory, _, _) -> List.except [t] s
-        | ArrivedBack(_, Truck t, Factory)
-        | VehicleProvided(Truck t, Factory)-> s @ [t]
-        | _ -> s
-    ) []
-
-let cargoAtFactory time events =
-    events
-    |> filterUntilNow time
-    |> Seq.fold (fun s e ->
-        match e with
-        | CargoReadyForDelivery c -> s @ [c]
-        | PickedUpShipment(c, Factory) -> List.except [c] s
-        | _ -> s
-    ) []
-
-let avaliableShip time events =
-    events
-    |> filterUntilNow time
-    |> Seq.choose (function
-        | VehicleProvided(Ship, Port)
-        | ArrivedBack(_, Ship, Port) -> Some <| Some Ship
-        | Departing(_, Ship, Port, _, _) -> Some None
+    let nextTransportId events =
+        events
+        |> Seq.map fst
+        |> Seq.choose (function
+        | TransportCreated(Identifier id) -> Some id
         | _ -> None)
-    |> Seq.tryLast
-    |> Option.flatten
+        |> Seq.tryLast
+        |> Option.defaultValue 0
+        |> Identifier
 
-let cargoWaitingOnPort time events = 
-    events
-    |> filterUntilNow time
-    |> Seq.fold (fun s e -> 
-        match e with
-        | ParkedShipment(c,Port) -> s @ [c]
-        | PickedUpShipment(c,Port) -> List.except [c] s
-        | _ -> s
-    ) []
+    let filterUntilNow time events =
+        events
+        |> Seq.filter (fun (_, t) -> t <= time)
+        |> Seq.map fst
+
+    let aggregate folder (time:Timepoint) (events:Entry list)  =
+        events
+        |> filterUntilNow time
+        |> Seq.fold folder []
+
+    let trucksAtFactory = aggregate (fun s e ->
+            match e with
+            | Departing(_, Truck t, Factory, _, _) -> List.except [t] s
+            | ArrivedBack(_, Truck t, Factory)
+            | VehicleProvided(Truck t, Factory)-> s @ [t]
+            | _ -> s
+        )
+
+    let cargoAtFactory = aggregate (fun s e ->
+            match e with
+            | CargoReadyForDelivery c -> s @ [c]
+            | PickedUpShipment(c, Factory) -> List.except [c] s
+            | _ -> s
+        )
+    
+    let cargoWaitingOnPort = aggregate (fun s e -> 
+            match e with
+            | ParkedShipment(c,Port) -> s @ [c]
+            | PickedUpShipment(c,Port) -> List.except [c] s
+            | _ -> s
+        )
+
+    let avaliableShip time events =
+        events
+        |> filterUntilNow time
+        |> Seq.choose (function
+            | VehicleProvided(Ship, Port)
+            | ArrivedBack(_, Ship, Port) -> Some <| Some Ship
+            | Departing(_, Ship, Port, _, _) -> Some None
+            | _ -> None)
+        |> Seq.tryLast
+        |> Option.flatten
+
+open Projections
 
 let moveCargoFromPort time events =
-    let cargo = 
-        events
-        |> cargoWaitingOnPort time 
-        |> List.tryHead
-
+    let cargo = cargoWaitingOnPort time events |> List.tryHead
     let vehicle = avaliableShip time events
     let nextId = nextTransportId events
     Option.map2 (Domain.pickUpCargoAtPort time nextId) cargo vehicle |> Option.defaultValue []
@@ -148,13 +150,6 @@ let iterate intialEvents =
         time <- time + 1
         finished <- (cargoAtFactory time events).IsEmpty && (cargoWaitingOnPort time events).IsEmpty
     events
-
-let findLatestDelivery events =
-    events
-    |> Seq.choose (function
-        | DeliveredShipment _, t -> Some t
-        | _ -> None)
-    |> Seq.max
 
 let buildInitialEvents cargo =
     let initialCargo = cargo |> List.mapi (fun i c -> CargoReadyForDelivery(CargoIdentifier.Identifier i, c))
