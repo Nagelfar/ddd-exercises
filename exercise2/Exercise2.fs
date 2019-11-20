@@ -56,37 +56,41 @@ module Domain =
           Entry(ArrivedBack(transportId, ship, Port), time + 8) ]
 
 type State =
-    { TrucksAtFactory: Map<Truck, Timepoint>
+    { 
       CargoAtFactory: Cargo list
       NextTransportId: TransportIdentifier }
     static member Initial =
-        { TrucksAtFactory = Map.empty
-          CargoAtFactory = []
-          NextTransportId = Identifier(0) }
+          { CargoAtFactory = []
+            NextTransportId = Identifier(0) }
 
 let update (state: State) event =
     match event with
     | TransportCreated(Identifier(id)), _ -> { state with NextTransportId = Identifier(id + 1) }
     | CargoReadyForDelivery c, _ -> { state with CargoAtFactory = state.CargoAtFactory @ [ c ] }
-    | Departing(_, Truck t, Factory, _, _), _ -> { state with TrucksAtFactory = state.TrucksAtFactory.Remove t }
-    | ArrivedBack(_, Truck t, Factory), time
-    | VehicleProvided(Truck t, Factory), time -> { state with TrucksAtFactory = state.TrucksAtFactory.Add(t, time) }
     | PickedUpShipment(c, Factory), _ -> { state with CargoAtFactory = state.CargoAtFactory.Tail }
     | _ -> state
 
 let buildState events = events |> Seq.fold update State.Initial
 
-let findFirstAvaliable items time =
-    items
-    |> Map.filter (fun _ v -> v <= time)
-    |> Map.toSeq
-    |> Seq.map fst
-    |> Seq.tryHead
-
-let avaliableShip time events =
+let filterUntilNow time events =
     events
     |> Seq.filter (fun (_, t) -> t <= time)
     |> Seq.map fst
+
+let trucksAtFactory time events =
+    events
+    |> filterUntilNow time
+    |> Seq.fold (fun s e ->
+        match e with
+        | Departing(_, Truck t, Factory, _, _) -> List.except [t] s
+        | ArrivedBack(_, Truck t, Factory)
+        | VehicleProvided(Truck t, Factory)-> s @ [t]
+        | _ -> s
+    ) []
+
+let avaliableShip time events =
+    events
+    |> filterUntilNow time
     |> Seq.choose (function
         | VehicleProvided(Ship, Port)
         | ArrivedBack(_, Ship, Port) -> Some <| Some Ship
@@ -97,8 +101,7 @@ let avaliableShip time events =
 
 let cargoWaitingOnPort time events = 
     events
-    |> Seq.filter (fun (_,t) -> t <= time)
-    |> Seq.map fst
+    |> filterUntilNow time
     |> Seq.fold (fun s e -> 
         match e with
         | ParkedShipment(c,Port) -> s @ [c]
@@ -119,9 +122,8 @@ let moveCargoFromPort time events =
 let moveCargoFromFactory time events =
     let state = buildState events
     let cargo = List.tryHead state.CargoAtFactory
-    let vehicle = findFirstAvaliable state.TrucksAtFactory time
+    let vehicle = trucksAtFactory time events |> List.tryHead
     Option.map2 (Domain.pickUpCargoAtFactory time state.NextTransportId) cargo vehicle |> Option.defaultValue []
-
     
 let step time events =
     let eventsFromPort = moveCargoFromPort time events
