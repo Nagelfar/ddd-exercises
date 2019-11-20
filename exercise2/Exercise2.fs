@@ -55,20 +55,15 @@ module Domain =
           Entry(DeliveredShipment(cargo), time + 4)
           Entry(ArrivedBack(transportId, ship, Port), time + 8) ]
 
-type State =
-    { 
-      NextTransportId: TransportIdentifier }
-    static member Initial =
-          { 
-            NextTransportId = Identifier(0) }
-
-let update (state: State) event =
-    match event with
-    | TransportCreated(Identifier(id)), _ -> { state with NextTransportId = Identifier(id + 1) }
-    
-    | _ -> state
-
-let buildState events = events |> Seq.fold update State.Initial
+let nextTransportId events =
+    events
+    |> Seq.map fst
+    |> Seq.choose (function
+    | TransportCreated(Identifier id) -> Some id
+    | _ -> None)
+    |> Seq.tryLast
+    |> Option.defaultValue 0
+    |> Identifier
 
 let filterUntilNow time events =
     events
@@ -118,20 +113,20 @@ let cargoWaitingOnPort time events =
     ) []
 
 let moveCargoFromPort time events =
-    let state = buildState events
     let cargo = 
         events
         |> cargoWaitingOnPort time 
         |> List.tryHead
 
     let vehicle = avaliableShip time events
-    Option.map2 (Domain.pickUpCargoAtPort time state.NextTransportId) cargo vehicle |> Option.defaultValue []
+    let nextId = nextTransportId events
+    Option.map2 (Domain.pickUpCargoAtPort time nextId) cargo vehicle |> Option.defaultValue []
 
 let moveCargoFromFactory time events =
-    let state = buildState events
     let cargo = cargoAtFactory time events |> List.tryHead 
     let vehicle = trucksAtFactory time events |> List.tryHead
-    Option.map2 (Domain.pickUpCargoAtFactory time state.NextTransportId) cargo vehicle |> Option.defaultValue []
+    let nextId = nextTransportId events
+    Option.map2 (Domain.pickUpCargoAtFactory time nextId) cargo vehicle |> Option.defaultValue []
     
 let step time events =
     let eventsFromPort = moveCargoFromPort time events
@@ -151,7 +146,6 @@ let iterate intialEvents =
     while not finished do
         events <- step time events
         time <- time + 1
-        let state = buildState events
         finished <- (cargoAtFactory time events).IsEmpty && (cargoWaitingOnPort time events).IsEmpty
     events
 
