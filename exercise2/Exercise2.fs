@@ -57,17 +57,15 @@ module Domain =
 
 type State =
     { 
-      CargoAtFactory: Cargo list
       NextTransportId: TransportIdentifier }
     static member Initial =
-          { CargoAtFactory = []
+          { 
             NextTransportId = Identifier(0) }
 
 let update (state: State) event =
     match event with
     | TransportCreated(Identifier(id)), _ -> { state with NextTransportId = Identifier(id + 1) }
-    | CargoReadyForDelivery c, _ -> { state with CargoAtFactory = state.CargoAtFactory @ [ c ] }
-    | PickedUpShipment(c, Factory), _ -> { state with CargoAtFactory = state.CargoAtFactory.Tail }
+    
     | _ -> state
 
 let buildState events = events |> Seq.fold update State.Initial
@@ -85,6 +83,16 @@ let trucksAtFactory time events =
         | Departing(_, Truck t, Factory, _, _) -> List.except [t] s
         | ArrivedBack(_, Truck t, Factory)
         | VehicleProvided(Truck t, Factory)-> s @ [t]
+        | _ -> s
+    ) []
+
+let cargoAtFactory time events =
+    events
+    |> filterUntilNow time
+    |> Seq.fold (fun s e ->
+        match e with
+        | CargoReadyForDelivery c -> s @ [c]
+        | PickedUpShipment(c, Factory) -> List.except [c] s
         | _ -> s
     ) []
 
@@ -121,7 +129,7 @@ let moveCargoFromPort time events =
 
 let moveCargoFromFactory time events =
     let state = buildState events
-    let cargo = List.tryHead state.CargoAtFactory
+    let cargo = cargoAtFactory time events |> List.tryHead 
     let vehicle = trucksAtFactory time events |> List.tryHead
     Option.map2 (Domain.pickUpCargoAtFactory time state.NextTransportId) cargo vehicle |> Option.defaultValue []
     
@@ -138,13 +146,13 @@ let step time events =
 
 let iterate intialEvents =
     let mutable events: Entry list = intialEvents
-    let mutable notFinished = true
+    let mutable finished = false
     let mutable time = 0
-    while notFinished do
+    while not finished do
         events <- step time events
         time <- time + 1
         let state = buildState events
-        notFinished <- state.CargoAtFactory.Length > 0 || not (cargoWaitingOnPort time events).IsEmpty
+        finished <- (cargoAtFactory time events).IsEmpty && (cargoWaitingOnPort time events).IsEmpty
     events
 
 let findLatestDelivery events =
