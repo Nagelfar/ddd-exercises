@@ -1,7 +1,5 @@
 module Exercise2
 
-open System.Collections.Generic
-
 type Destination = A | B
 
 type CargoIdentifier = Identifier of int
@@ -32,7 +30,7 @@ type State =
     { TrucksAtFactory: Map<Timepoint, Truck Set>
       ShipWaitingAtPort: Timepoint
       CargoAtFactory: Cargo list
-      CargoWaitingForPickupAtPort: Cargo list
+      CargoWaitingForPickupAtPort: Map<Cargo, Timepoint>
       CurrentTime: Timepoint
       CargoDelivered: (Cargo * Timepoint) list }
       
@@ -48,9 +46,9 @@ let update (state: State) event =
     | ArrivedBack(Truck t, Factory), time -> 
         {state with TrucksAtFactory = state.TrucksAtFactory.Add(time, set [ t ]) }
     | ArrivedBack(Ship, Port), time -> { state with ShipWaitingAtPort = time }
-    | ParkedShipment(c, Port), _ -> { state with CargoWaitingForPickupAtPort = state.CargoWaitingForPickupAtPort @ [c]}
+    | ParkedShipment(c, Port), time -> {state with CargoWaitingForPickupAtPort = state.CargoWaitingForPickupAtPort.Add (c, time)}     
     | DeliveredShipment (c), time -> {state with CargoDelivered = state.CargoDelivered @ [(c, time)]}
-    | PickedUpShipment(_ , Port), _ -> {state with CargoWaitingForPickupAtPort = state.CargoWaitingForPickupAtPort.Tail }
+    | PickedUpShipment(c , Port), _ -> {state with CargoWaitingForPickupAtPort = state.CargoWaitingForPickupAtPort.Remove c }
     | PickedUpShipment(c, Factory),_ -> {state with CargoAtFactory = state.CargoAtFactory.Tail }
     | DeliveredShipment _, _ | ArrivedBack(_), _  | ParkedShipment _ ,_ | PickedUpShipment _, _ | DepartingLocation _,_ -> state
 
@@ -83,10 +81,17 @@ let moveCargoFromFactory state =
 
     trucksAvaliable
 
+let firstCargoAtPort state = 
+    state.CargoWaitingForPickupAtPort
+    |> Map.filter (fun _ v -> v <= state.CurrentTime)
+    |> Map.toSeq
+    |> Seq.map fst
+    |> Seq.tryHead    
 
 let moveCargoFromPort state =
-    if state.ShipWaitingAtPort <= state.CurrentTime && state.CargoWaitingForPickupAtPort.Length > 0 then   
-        let cargo = state.CargoWaitingForPickupAtPort.Head
+    let cargoAtPort = firstCargoAtPort state
+    if state.ShipWaitingAtPort <= state.CurrentTime && cargoAtPort.IsSome then   
+        let cargo = cargoAtPort.Value
         [ 
             Entry(PickedUpShipment(cargo, Port), state.CurrentTime)
             Entry(DepartingLocation(Ship,Port, cargo), state.CurrentTime)
@@ -98,8 +103,7 @@ let moveCargoFromPort state =
 let step state =
     let ts = 
         moveCargoFromPort state
-        |> Seq.fold update state
-    
+        |> Seq.fold update state    
 
     let mutable mState = ts
     let mutable eventsFromFactory = moveCargoFromFactory ts
@@ -114,7 +118,7 @@ let step state =
 
 let iterate (initial: State) =
     let mutable state = initial
-    while state.CargoAtFactory.Length > 0 || state.CargoWaitingForPickupAtPort.Length > 0 do
+    while state.CargoAtFactory.Length > 0 || (firstCargoAtPort state).IsSome do
         let stepState = step state
         state <- {stepState with CurrentTime = stepState.CurrentTime + 1 }
     state    
@@ -142,7 +146,7 @@ let buildInitialState cargo =
           CargoDelivered = []
           CurrentTime = 0          
           ShipWaitingAtPort = 0
-          CargoWaitingForPickupAtPort = []
+          CargoWaitingForPickupAtPort = Map.empty
           }
 
     Seq.concat [initialCargo ; initialTrucks]
