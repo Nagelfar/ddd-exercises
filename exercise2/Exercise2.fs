@@ -52,7 +52,7 @@ let update (state: State) event =
     | PickedUpShipment(c, Factory),_ -> {state with CargoAtFactory = state.CargoAtFactory.Tail }
     | DeliveredShipment _, _ | ArrivedBack(_), _  | ParkedShipment _ ,_ | PickedUpShipment _, _ | DepartingLocation _,_ -> state
 
-let pickUpCargoAtFactory cargo truck time =
+let pickUpCargoAtFactory time cargo truck  =
     match cargo with
     | (_, A) as c->
         [ 
@@ -67,46 +67,52 @@ let pickUpCargoAtFactory cargo truck time =
             Entry(DepartingLocation(Truck truck, Factory, c), time)
             Entry(DeliveredShipment (c), time + 5)
             Entry(ArrivedBack(Truck truck, Factory), time + 10) 
-        ]    
+        ] 
+let pickUpCargoAtPort time cargo ship =
+    [ 
+        Entry(PickedUpShipment(cargo, Port), time)
+        Entry(DepartingLocation(Ship,Port, cargo), time)
+        Entry(DeliveredShipment (cargo), time + 4)
+        Entry(ArrivedBack(Ship, Port), time + 8) 
+    ]
 
 let moveCargoFromFactory state = 
-    let cargoAvaliable = 
+    let avaliableCargo = 
         List.tryHead state.CargoAtFactory
-    let trucksAvaliable = 
+    let avaliableTruck = 
         state.TrucksAtFactory
         |> Map.tryFind state.CurrentTime
         |> Option.map Set.toSeq
         |> Option.bind Seq.tryHead
-        |> Option.map2 (fun c t -> pickUpCargoAtFactory c t state.CurrentTime) cargoAvaliable
 
-    trucksAvaliable
+    Option.map2 (pickUpCargoAtFactory state.CurrentTime) avaliableCargo avaliableTruck    
 
 let firstCargoAtPort state = 
     state.CargoWaitingForPickupAtPort
     |> Map.filter (fun _ v -> v <= state.CurrentTime)
     |> Map.toSeq
     |> Seq.map fst
-    |> Seq.tryHead    
+    |> Seq.tryHead  
+
+let avaliableShip state =
+    if state.ShipWaitingAtPort <= state.CurrentTime then
+        Some Ship
+    else 
+        None    
 
 let moveCargoFromPort state =
     let cargoAtPort = firstCargoAtPort state
-    if state.ShipWaitingAtPort <= state.CurrentTime && cargoAtPort.IsSome then   
-        let cargo = cargoAtPort.Value
-        [ 
-            Entry(PickedUpShipment(cargo, Port), state.CurrentTime)
-            Entry(DepartingLocation(Ship,Port, cargo), state.CurrentTime)
-            Entry(DeliveredShipment (cargo), state.CurrentTime + 4)
-            Entry(ArrivedBack(Ship, Port), state.CurrentTime + 8) 
-        ]
-    else []
+    let ship = avaliableShip state
+    Option.map2 (pickUpCargoAtPort state.CurrentTime) cargoAtPort ship
 
 let step state =
-    let ts = 
+    let mutable mState = 
         moveCargoFromPort state
-        |> Seq.fold update state    
+        |> Option.toList
+        |> List.collect id
+        |> List.fold update state    
 
-    let mutable mState = ts
-    let mutable eventsFromFactory = moveCargoFromFactory ts
+    let mutable eventsFromFactory = moveCargoFromFactory mState
     while eventsFromFactory.IsSome do
         let newState = 
             eventsFromFactory.Value       
