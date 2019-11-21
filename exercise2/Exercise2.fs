@@ -81,6 +81,7 @@ module Projections =
             | TransportCreated(Identifier id) -> Some id
             | _ -> None)
         |> Seq.tryLast
+        |> Option.map (fun v -> v + 1)
         |> Option.defaultValue 0
         |> Identifier
 
@@ -231,36 +232,40 @@ module Program =
             | _ -> None)
                 
 
-    let parseInput (input: string []) =
-        match input with
-        | [| singleArgument |] ->
-            singleArgument.ToCharArray()
-            |> Seq.map (function
-                | 'A' -> A
-                | 'B' -> B
-                | x -> failwithf "Unknown cargo %c" x)
-        | x -> failwithf "Expecting a single string containing the cargo list but got %A" x
+    let parseInput (input: string ) =
+        input.ToCharArray()
+        |> Seq.map (function
+            | 'A' -> A
+            | 'B' -> B
+            | x -> failwithf "Unknown cargo %c" x)
+
     let serialize v =
         let options = JsonSerializerOptions(PropertyNamingPolicy=JsonNamingPolicy.CamelCase)
         JsonSerializer.Serialize (v , options)
 
     [<EntryPoint>]
     let main argv =
-        printfn "%A" argv
-        let cargo = parseInput argv |> Seq.toList
+        if argv.Length < 1 then
+            failwithf "Expecting at least a single string containing the cargo list but got %A" argv
+
+        let cargo = parseInput argv.[0] |> Seq.toList
 
         let events =
             cargo
             |> buildInitialEvents
             |> iterate
 
-        let highest = events |> findLatestDelivery
-
-        printfn "Highest time %A" highest
-        printfn "%A" events
-        events
-        |> convertToTrace
-        |> Seq.map serialize
-        |> Seq.iter (fun f -> printfn "%s" f)
+        if argv.Length = 1 then
+            printfn "No explicit arguments given, fallback to time"
+        if Array.contains "time" argv then
+            let highest = events |> findLatestDelivery
+            printfn "Highest time %A for route %A" highest cargo
+        if Array.contains "events" argv then
+            printfn "%A" events
+        if Array.contains "trace" argv then
+            events
+            |> convertToTrace
+            |> Seq.map serialize
+            |> Seq.iter (fun f -> printfn "%s" f)
 
         0 // return an integer exit code
