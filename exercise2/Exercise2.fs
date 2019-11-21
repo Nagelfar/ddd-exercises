@@ -63,7 +63,7 @@ module Domain =
           Entry(Departing(transportId, ship, Port, Some cargo, Warehouse A), time)
           Entry(PlannedArrival(transportId, ship, Warehouse A,Some cargo), time + 4) 
           Entry(DeliveredShipment(cargo), time + 4)
-          Entry(Departing(transportId, ship, Warehouse A, None, Factory), time + 4)
+          Entry(Departing(transportId, ship, Warehouse A, None, Port), time + 4)
           Entry(PlannedArrival(transportId, ship, Port,None), time + 8) ]
 
 module Projections =
