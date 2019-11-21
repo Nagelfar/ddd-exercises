@@ -1,8 +1,11 @@
 module Exercise2
 
-type Destination = A | B
+type Destination =
+    | A
+    | B
 
 type CargoIdentifier = Identifier of int
+
 type Cargo = CargoIdentifier * Destination
 
 type Location =
@@ -10,7 +13,10 @@ type Location =
     | Port
     | Warehouse of Destination
 
-type Truck = T1 | T2
+type Truck =
+    | T1
+    | T2
+
 type Vehicle =
     | Truck of Truck
     | Ship
@@ -23,9 +29,8 @@ type Event =
     | CargoReadyForDelivery of Cargo
     | VehicleProvided of Vehicle * Location
     | TransportCreated of TransportIdentifier
-    | Departing of TransportIdentifier * Vehicle * from: Location * Cargo * destination: Location
-    | Arrived of TransportIdentifier * Vehicle * Location * Cargo
-    | ArrivedBack of TransportIdentifier * Vehicle * destination: Location
+    | Departing of TransportIdentifier * Vehicle * from: Location * Cargo option * destination: Location
+    | PlannedArrival of TransportIdentifier * Vehicle * destination: Location * Cargo option
     | ParkedShipment of Cargo * Location
     | PickedUpShipment of Cargo * Location
     | DeliveredShipment of Cargo
@@ -38,22 +43,28 @@ module Domain =
         | (_, A) ->
             [ Entry(TransportCreated(transportId), time)
               Entry(PickedUpShipment(cargo, Factory), time)
-              Entry(Departing(transportId, Truck truck, Factory, cargo, Port), time)
+              Entry(Departing(transportId, Truck truck, Factory, Some cargo, Port), time)
+              Entry(PlannedArrival(transportId, Truck truck, Port, Some cargo), time + 1)
               Entry(ParkedShipment(cargo, Port), time + 1)
-              Entry(ArrivedBack(transportId, Truck truck, Factory), time + 2) ]
+              Entry(Departing(transportId, Truck truck, Port, None, Factory), time + 1)
+              Entry(PlannedArrival(transportId, Truck truck, Factory, None), time + 2) ]
         | (_, B) ->
             [ Entry(TransportCreated(transportId), time)
               Entry(PickedUpShipment(cargo, Factory), time)
-              Entry(Departing(transportId, Truck truck, Factory, cargo, Warehouse B), time)
+              Entry(Departing(transportId, Truck truck, Factory, Some cargo, Warehouse B), time)
+              Entry(PlannedArrival(transportId, Truck truck, Warehouse B, Some cargo), time + 5)
               Entry(DeliveredShipment(cargo), time + 5)
-              Entry(ArrivedBack(transportId, Truck truck, Factory), time + 10) ]
+              Entry(Departing(transportId, Truck truck, Warehouse B, None, Factory), time + 5)
+              Entry(PlannedArrival(transportId, Truck truck, Factory,None), time + 10) ]
 
     let pickUpCargoAtPort time transportId cargo ship =
         [ Entry(TransportCreated(transportId), time)
           Entry(PickedUpShipment(cargo, Port), time)
-          Entry(Departing(transportId, ship, Port, cargo, Warehouse A), time)
+          Entry(Departing(transportId, ship, Port, Some cargo, Warehouse A), time)
+          Entry(PlannedArrival(transportId, ship, Warehouse A,Some cargo), time + 4) 
           Entry(DeliveredShipment(cargo), time + 4)
-          Entry(ArrivedBack(transportId, ship, Port), time + 8) ]
+          Entry(Departing(transportId, ship, Warehouse A, None, Factory), time + 4)
+          Entry(PlannedArrival(transportId, ship, Port,None), time + 8) ]
 
 module Projections =
     let findLatestDelivery events =
@@ -67,8 +78,8 @@ module Projections =
         events
         |> Seq.map fst
         |> Seq.choose (function
-        | TransportCreated(Identifier id) -> Some id
-        | _ -> None)
+            | TransportCreated(Identifier id) -> Some id
+            | _ -> None)
         |> Seq.tryLast
         |> Option.defaultValue 0
         |> Identifier
@@ -78,39 +89,39 @@ module Projections =
         |> Seq.filter (fun (_, t) -> t <= time)
         |> Seq.map fst
 
-    let aggregate folder (time:Timepoint) (events:Entry list)  =
+    let aggregate folder (time: Timepoint) (events: Entry list) =
         events
         |> filterUntilNow time
         |> Seq.fold folder []
 
-    let trucksAtFactory = aggregate (fun s e ->
+    let trucksAtFactory =
+        aggregate (fun s e ->
             match e with
-            | Departing(_, Truck t, Factory, _, _) -> List.except [t] s
-            | ArrivedBack(_, Truck t, Factory)
-            | VehicleProvided(Truck t, Factory)-> s @ [t]
-            | _ -> s
-        )
+            | Departing(_, Truck t, Factory, _, _) -> List.except [ t ] s
+            | PlannedArrival(_, Truck t, Factory,_)
+            | VehicleProvided(Truck t, Factory) -> s @ [ t ]
+            | _ -> s)
 
-    let cargoAtFactory = aggregate (fun s e ->
+    let cargoAtFactory =
+        aggregate (fun s e ->
             match e with
-            | CargoReadyForDelivery c -> s @ [c]
-            | PickedUpShipment(c, Factory) -> List.except [c] s
-            | _ -> s
-        )
-    
-    let cargoWaitingOnPort = aggregate (fun s e -> 
+            | CargoReadyForDelivery c -> s @ [ c ]
+            | PickedUpShipment(c, Factory) -> List.except [ c ] s
+            | _ -> s)
+
+    let cargoWaitingOnPort =
+        aggregate (fun s e ->
             match e with
-            | ParkedShipment(c,Port) -> s @ [c]
-            | PickedUpShipment(c,Port) -> List.except [c] s
-            | _ -> s
-        )
+            | ParkedShipment(c, Port) -> s @ [ c ]
+            | PickedUpShipment(c, Port) -> List.except [ c ] s
+            | _ -> s)
 
     let avaliableShip time events =
         events
         |> filterUntilNow time
         |> Seq.choose (function
             | VehicleProvided(Ship, Port)
-            | ArrivedBack(_, Ship, Port) -> Some <| Some Ship
+            | PlannedArrival(_, Ship, Port,_) -> Some <| Some Ship
             | Departing(_, Ship, Port, _, _) -> Some None
             | _ -> None)
         |> Seq.tryLast
@@ -125,11 +136,11 @@ let moveCargoFromPort time events =
     Option.map2 (Domain.pickUpCargoAtPort time nextId) cargo vehicle |> Option.defaultValue []
 
 let moveCargoFromFactory time events =
-    let cargo = cargoAtFactory time events |> List.tryHead 
+    let cargo = cargoAtFactory time events |> List.tryHead
     let vehicle = trucksAtFactory time events |> List.tryHead
     let nextId = nextTransportId events
     Option.map2 (Domain.pickUpCargoAtFactory time nextId) cargo vehicle |> Option.defaultValue []
-    
+
 let step time events =
     let eventsFromPort = moveCargoFromPort time events
     let mutable mEvents = events @ eventsFromPort
@@ -162,6 +173,63 @@ let buildInitialEvents cargo =
     List.concat [ initialCargo; initialVehicles ] |> List.map (fun e -> e, 0)
 
 module Program =
+    open System.Text.Json
+    open System.Text.Json.Serialization
+
+    type CargoEntry =
+        { Cargo_id: int
+          Destination: string
+          Origin: string }
+
+    type EventEntry =
+        { Event: string
+          Time: int
+          Transport_id: int
+          Kind: string
+          Location: string
+          Destination: string
+          Cargo: CargoEntry list }
+
+    let convertVehicle =
+        function
+        | Truck _ -> "TRUCK"
+        | Ship -> "SHIP"
+
+    let convertLocation =
+        function
+        | Factory -> "FACTORY"
+        | Port -> "PORT"
+        | Warehouse w -> string w
+
+    let convertCargo (CargoIdentifier.Identifier(id), d) =
+        { Cargo_id = id
+          Destination = string d
+          Origin = convertLocation Factory }
+
+    let convertToTrace events =
+        events
+        |> Seq.sortBy snd
+        |> Seq.choose (function
+            | Departing(Identifier(id), v, f, c, d), time ->
+                { Event = "DEPART"
+                  Time = time
+                  Transport_id = id
+                  Kind = convertVehicle v
+                  Location = convertLocation f
+                  Destination = convertLocation d
+                  Cargo = c |> Option.map convertCargo |> Option.toList }
+                |> Some
+            | PlannedArrival(Identifier(id), v, d, c), time ->
+                { Event = "ARRIVE"
+                  Time = time
+                  Transport_id = id
+                  Kind = convertVehicle v
+                  Location = convertLocation d
+                  Destination = null
+                  Cargo = c |> Option.map convertCargo |> Option.toList  }
+                |> Some
+            | _ -> None)
+                
 
     let parseInput (input: string []) =
         match input with
@@ -172,6 +240,9 @@ module Program =
                 | 'B' -> B
                 | x -> failwithf "Unknown cargo %c" x)
         | x -> failwithf "Expecting a single string containing the cargo list but got %A" x
+    let serialize v =
+        let options = JsonSerializerOptions(PropertyNamingPolicy=JsonNamingPolicy.CamelCase)
+        JsonSerializer.Serialize (v , options)
 
     [<EntryPoint>]
     let main argv =
@@ -182,11 +253,14 @@ module Program =
             cargo
             |> buildInitialEvents
             |> iterate
-        let highest =
-            events
-            |> findLatestDelivery
+
+        let highest = events |> findLatestDelivery
 
         printfn "Highest time %A" highest
         printfn "%A" events
+        events
+        |> convertToTrace
+        |> Seq.map serialize
+        |> Seq.iter (fun f -> printfn "%s" f)
 
         0 // return an integer exit code

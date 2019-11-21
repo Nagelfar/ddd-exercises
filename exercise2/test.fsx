@@ -1,3 +1,5 @@
+#I @"/Users/fm/.nuget/packages/"
+#r "system.text.json/4.6.0/lib/net461/System.Text.Json.dll"
 #load "Exercise2.fs"
 
 open Exercise2
