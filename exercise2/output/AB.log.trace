@@ -55,6 +55,17 @@
    "cat": "ddd"
   }, 
   {
+   "tid": "TRUCK:0", 
+   "ph": "E", 
+   "args": {
+    "cargo": [], 
+    "transport": "TRUCK:0"
+   }, 
+   "pid": "TRUCK:0", 
+   "ts": 2, 
+   "cat": "ddd"
+  }, 
+  {
    "name": "PORT-A", 
    "tid": "SHIP:2", 
    "ph": "B", 
@@ -65,17 +76,6 @@
     "transport": "SHIP:2"
    }, 
    "pid": "SHIP:2", 
-   "ts": 1, 
-   "cat": "ddd"
-  }, 
-  {
-   "tid": "TRUCK:0", 
-   "ph": "E", 
-   "args": {
-    "cargo": [], 
-    "transport": "TRUCK:0"
-   }, 
-   "pid": "TRUCK:0", 
    "ts": 2, 
    "cat": "ddd"
   }, 
@@ -114,24 +114,13 @@
     "transport": "SHIP:2"
    }, 
    "pid": "SHIP:2", 
-   "ts": 5, 
+   "ts": 8, 
    "cat": "ddd"
   }, 
   {
    "name": "A-PORT", 
    "tid": "SHIP:2", 
    "ph": "B", 
-   "args": {
-    "cargo": [], 
-    "transport": "SHIP:2"
-   }, 
-   "pid": "SHIP:2", 
-   "ts": 5, 
-   "cat": "ddd"
-  }, 
-  {
-   "tid": "SHIP:2", 
-   "ph": "E", 
    "args": {
     "cargo": [], 
     "transport": "SHIP:2"
@@ -149,6 +138,17 @@
    }, 
    "pid": "TRUCK:1", 
    "ts": 10, 
+   "cat": "ddd"
+  }, 
+  {
+   "tid": "SHIP:2", 
+   "ph": "E", 
+   "args": {
+    "cargo": [], 
+    "transport": "SHIP:2"
+   }, 
+   "pid": "SHIP:2", 
+   "ts": 15, 
    "cat": "ddd"
   }
  ]

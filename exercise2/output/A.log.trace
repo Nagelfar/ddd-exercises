@@ -41,6 +41,17 @@
    "cat": "ddd"
   }, 
   {
+   "tid": "TRUCK:0", 
+   "ph": "E", 
+   "args": {
+    "cargo": [], 
+    "transport": "TRUCK:0"
+   }, 
+   "pid": "TRUCK:0", 
+   "ts": 2, 
+   "cat": "ddd"
+  }, 
+  {
    "name": "PORT-A", 
    "tid": "SHIP:1", 
    "ph": "B", 
@@ -51,17 +62,6 @@
     "transport": "SHIP:1"
    }, 
    "pid": "SHIP:1", 
-   "ts": 1, 
-   "cat": "ddd"
-  }, 
-  {
-   "tid": "TRUCK:0", 
-   "ph": "E", 
-   "args": {
-    "cargo": [], 
-    "transport": "TRUCK:0"
-   }, 
-   "pid": "TRUCK:0", 
    "ts": 2, 
    "cat": "ddd"
   }, 
@@ -75,7 +75,7 @@
     "transport": "SHIP:1"
    }, 
    "pid": "SHIP:1", 
-   "ts": 5, 
+   "ts": 8, 
    "cat": "ddd"
   }, 
   {
@@ -87,7 +87,7 @@
     "transport": "SHIP:1"
    }, 
    "pid": "SHIP:1", 
-   "ts": 5, 
+   "ts": 9, 
    "cat": "ddd"
   }, 
   {
@@ -98,7 +98,7 @@
     "transport": "SHIP:1"
    }, 
    "pid": "SHIP:1", 
-   "ts": 9, 
+   "ts": 15, 
    "cat": "ddd"
   }
  ]

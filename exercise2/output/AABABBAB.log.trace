@@ -80,20 +80,6 @@
    "cat": "ddd"
   }, 
   {
-   "name": "PORT-A", 
-   "tid": "SHIP:2", 
-   "ph": "B", 
-   "args": {
-    "cargo": [
-     "CARGO:FACTORY_A_0"
-    ], 
-    "transport": "SHIP:2"
-   }, 
-   "pid": "SHIP:2", 
-   "ts": 1, 
-   "cat": "ddd"
-  }, 
-  {
    "tid": "TRUCK:0", 
    "ph": "E", 
    "args": {
@@ -116,6 +102,21 @@
    "cat": "ddd"
   }, 
   {
+   "name": "PORT-A", 
+   "tid": "SHIP:2", 
+   "ph": "B", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_0", 
+     "CARGO:FACTORY_A_1"
+    ], 
+    "transport": "SHIP:2"
+   }, 
+   "pid": "SHIP:2", 
+   "ts": 2, 
+   "cat": "ddd"
+  }, 
+  {
    "name": "FACTORY-B", 
    "tid": "TRUCK:3", 
    "ph": "B", 
@@ -194,31 +195,6 @@
    "cat": "ddd"
   }, 
   {
-   "tid": "SHIP:2", 
-   "ph": "E", 
-   "args": {
-    "cargo": [
-     "CARGO:FACTORY_A_0"
-    ], 
-    "transport": "SHIP:2"
-   }, 
-   "pid": "SHIP:2", 
-   "ts": 5, 
-   "cat": "ddd"
-  }, 
-  {
-   "name": "A-PORT", 
-   "tid": "SHIP:2", 
-   "ph": "B", 
-   "args": {
-    "cargo": [], 
-    "transport": "SHIP:2"
-   }, 
-   "pid": "SHIP:2", 
-   "ts": 5, 
-   "cat": "ddd"
-  }, 
-  {
    "tid": "TRUCK:3", 
    "ph": "E", 
    "args": {
@@ -246,6 +222,21 @@
   {
    "tid": "SHIP:2", 
    "ph": "E", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_0", 
+     "CARGO:FACTORY_A_1"
+    ], 
+    "transport": "SHIP:2"
+   }, 
+   "pid": "SHIP:2", 
+   "ts": 8, 
+   "cat": "ddd"
+  }, 
+  {
+   "name": "A-PORT", 
+   "tid": "SHIP:2", 
+   "ph": "B", 
    "args": {
     "cargo": [], 
     "transport": "SHIP:2"
@@ -280,20 +271,6 @@
    "cat": "ddd"
   }, 
   {
-   "name": "PORT-A", 
-   "tid": "SHIP:6", 
-   "ph": "B", 
-   "args": {
-    "cargo": [
-     "CARGO:FACTORY_A_1"
-    ], 
-    "transport": "SHIP:6"
-   }, 
-   "pid": "SHIP:6", 
-   "ts": 9, 
-   "cat": "ddd"
-  }, 
-  {
    "tid": "TRUCK:3", 
    "ph": "E", 
    "args": {
@@ -306,41 +283,16 @@
   }, 
   {
    "name": "FACTORY-B", 
-   "tid": "TRUCK:7", 
+   "tid": "TRUCK:6", 
    "ph": "B", 
    "args": {
     "cargo": [
      "CARGO:FACTORY_B_5"
     ], 
-    "transport": "TRUCK:7"
+    "transport": "TRUCK:6"
    }, 
-   "pid": "TRUCK:7", 
+   "pid": "TRUCK:6", 
    "ts": 12, 
-   "cat": "ddd"
-  }, 
-  {
-   "tid": "SHIP:6", 
-   "ph": "E", 
-   "args": {
-    "cargo": [
-     "CARGO:FACTORY_A_1"
-    ], 
-    "transport": "SHIP:6"
-   }, 
-   "pid": "SHIP:6", 
-   "ts": 13, 
-   "cat": "ddd"
-  }, 
-  {
-   "name": "A-PORT", 
-   "tid": "SHIP:6", 
-   "ph": "B", 
-   "args": {
-    "cargo": [], 
-    "transport": "SHIP:6"
-   }, 
-   "pid": "SHIP:6", 
-   "ts": 13, 
    "cat": "ddd"
   }, 
   {
@@ -356,51 +308,77 @@
   }, 
   {
    "name": "FACTORY-PORT", 
-   "tid": "TRUCK:8", 
+   "tid": "TRUCK:7", 
    "ph": "B", 
    "args": {
     "cargo": [
      "CARGO:FACTORY_A_6"
     ], 
-    "transport": "TRUCK:8"
+    "transport": "TRUCK:7"
    }, 
-   "pid": "TRUCK:8", 
+   "pid": "TRUCK:7", 
    "ts": 14, 
    "cat": "ddd"
   }, 
   {
-   "tid": "TRUCK:8", 
+   "tid": "SHIP:2", 
+   "ph": "E", 
+   "args": {
+    "cargo": [], 
+    "transport": "SHIP:2"
+   }, 
+   "pid": "SHIP:2", 
+   "ts": 15, 
+   "cat": "ddd"
+  }, 
+  {
+   "tid": "TRUCK:7", 
    "ph": "E", 
    "args": {
     "cargo": [
      "CARGO:FACTORY_A_6"
     ], 
-    "transport": "TRUCK:8"
+    "transport": "TRUCK:7"
    }, 
-   "pid": "TRUCK:8", 
+   "pid": "TRUCK:7", 
    "ts": 15, 
    "cat": "ddd"
   }, 
   {
    "name": "PORT-FACTORY", 
-   "tid": "TRUCK:8", 
+   "tid": "TRUCK:7", 
    "ph": "B", 
    "args": {
     "cargo": [], 
-    "transport": "TRUCK:8"
+    "transport": "TRUCK:7"
    }, 
-   "pid": "TRUCK:8", 
+   "pid": "TRUCK:7", 
    "ts": 15, 
    "cat": "ddd"
   }, 
   {
-   "tid": "TRUCK:8", 
+   "tid": "TRUCK:7", 
    "ph": "E", 
    "args": {
     "cargo": [], 
-    "transport": "TRUCK:8"
+    "transport": "TRUCK:7"
    }, 
-   "pid": "TRUCK:8", 
+   "pid": "TRUCK:7", 
+   "ts": 16, 
+   "cat": "ddd"
+  }, 
+  {
+   "name": "PORT-A", 
+   "tid": "SHIP:8", 
+   "ph": "B", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_3", 
+     "CARGO:FACTORY_A_6"
+    ], 
+    "transport": "SHIP:8"
+   }, 
+   "pid": "SHIP:8", 
    "ts": 16, 
    "cat": "ddd"
   }, 
@@ -419,52 +397,27 @@
    "cat": "ddd"
   }, 
   {
-   "tid": "SHIP:6", 
-   "ph": "E", 
-   "args": {
-    "cargo": [], 
-    "transport": "SHIP:6"
-   }, 
-   "pid": "SHIP:6", 
-   "ts": 17, 
-   "cat": "ddd"
-  }, 
-  {
-   "tid": "TRUCK:7", 
+   "tid": "TRUCK:6", 
    "ph": "E", 
    "args": {
     "cargo": [
      "CARGO:FACTORY_B_5"
     ], 
-    "transport": "TRUCK:7"
+    "transport": "TRUCK:6"
    }, 
-   "pid": "TRUCK:7", 
+   "pid": "TRUCK:6", 
    "ts": 17, 
    "cat": "ddd"
   }, 
   {
    "name": "B-FACTORY", 
-   "tid": "TRUCK:7", 
+   "tid": "TRUCK:6", 
    "ph": "B", 
    "args": {
     "cargo": [], 
-    "transport": "TRUCK:7"
+    "transport": "TRUCK:6"
    }, 
-   "pid": "TRUCK:7", 
-   "ts": 17, 
-   "cat": "ddd"
-  }, 
-  {
-   "name": "PORT-A", 
-   "tid": "SHIP:10", 
-   "ph": "B", 
-   "args": {
-    "cargo": [
-     "CARGO:FACTORY_A_3"
-    ], 
-    "transport": "SHIP:10"
-   }, 
-   "pid": "SHIP:10", 
+   "pid": "TRUCK:6", 
    "ts": 17, 
    "cat": "ddd"
   }, 
@@ -494,64 +447,40 @@
    "cat": "ddd"
   }, 
   {
-   "tid": "SHIP:10", 
-   "ph": "E", 
-   "args": {
-    "cargo": [
-     "CARGO:FACTORY_A_3"
-    ], 
-    "transport": "SHIP:10"
-   }, 
-   "pid": "SHIP:10", 
-   "ts": 21, 
-   "cat": "ddd"
-  }, 
-  {
-   "name": "A-PORT", 
-   "tid": "SHIP:10", 
-   "ph": "B", 
-   "args": {
-    "cargo": [], 
-    "transport": "SHIP:10"
-   }, 
-   "pid": "SHIP:10", 
-   "ts": 21, 
-   "cat": "ddd"
-  }, 
-  {
-   "tid": "TRUCK:7", 
+   "tid": "TRUCK:6", 
    "ph": "E", 
    "args": {
     "cargo": [], 
-    "transport": "TRUCK:7"
+    "transport": "TRUCK:6"
    }, 
-   "pid": "TRUCK:7", 
+   "pid": "TRUCK:6", 
    "ts": 22, 
    "cat": "ddd"
   }, 
   {
-   "tid": "SHIP:10", 
+   "tid": "SHIP:8", 
    "ph": "E", 
    "args": {
-    "cargo": [], 
-    "transport": "SHIP:10"
+    "cargo": [
+     "CARGO:FACTORY_A_3", 
+     "CARGO:FACTORY_A_6"
+    ], 
+    "transport": "SHIP:8"
    }, 
-   "pid": "SHIP:10", 
-   "ts": 25, 
+   "pid": "SHIP:8", 
+   "ts": 22, 
    "cat": "ddd"
   }, 
   {
-   "name": "PORT-A", 
-   "tid": "SHIP:11", 
+   "name": "A-PORT", 
+   "tid": "SHIP:8", 
    "ph": "B", 
    "args": {
-    "cargo": [
-     "CARGO:FACTORY_A_6"
-    ], 
-    "transport": "SHIP:11"
+    "cargo": [], 
+    "transport": "SHIP:8"
    }, 
-   "pid": "SHIP:11", 
-   "ts": 25, 
+   "pid": "SHIP:8", 
+   "ts": 23, 
    "cat": "ddd"
   }, 
   {
@@ -566,39 +495,14 @@
    "cat": "ddd"
   }, 
   {
-   "tid": "SHIP:11", 
-   "ph": "E", 
-   "args": {
-    "cargo": [
-     "CARGO:FACTORY_A_6"
-    ], 
-    "transport": "SHIP:11"
-   }, 
-   "pid": "SHIP:11", 
-   "ts": 29, 
-   "cat": "ddd"
-  }, 
-  {
-   "name": "A-PORT", 
-   "tid": "SHIP:11", 
-   "ph": "B", 
-   "args": {
-    "cargo": [], 
-    "transport": "SHIP:11"
-   }, 
-   "pid": "SHIP:11", 
-   "ts": 29, 
-   "cat": "ddd"
-  }, 
-  {
-   "tid": "SHIP:11", 
+   "tid": "SHIP:8", 
    "ph": "E", 
    "args": {
     "cargo": [], 
-    "transport": "SHIP:11"
+    "transport": "SHIP:8"
    }, 
-   "pid": "SHIP:11", 
-   "ts": 33, 
+   "pid": "SHIP:8", 
+   "ts": 29, 
    "cat": "ddd"
   }
  ]
