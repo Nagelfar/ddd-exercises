@@ -1,6 +1,4 @@
-#I @"/Users/fm/.nuget/packages/"
-#r "system.text.json/4.6.0/lib/net461/System.Text.Json.dll"
-#r "system.text.encodings.web/4.0.0/lib/netstandard1.0/System.Text.Encodings.Web.dll"
+#load "../.paket/load/netstandard2.0/main.group.fsx"
 #load "Exercise2.fs"
 
 open Exercise2

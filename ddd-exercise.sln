@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{9E526B81-1FF0-4381-B8AF-7ABE93856042}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Exercise1", "exercise1\Exercise1.fsproj", "{01C6C88D-6D9C-4422-BC71-07FDE8026533}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Exercise2", "exercise2\Exercise2.fsproj", "{39A19756-12B2-4EB6-B170-4F4E8F86BE64}"
