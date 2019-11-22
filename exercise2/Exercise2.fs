@@ -160,6 +160,8 @@ let moveCargoFromFactory time events =
     Option.map2 (Domain.pickUpCargoAtFactory time nextId) cargo vehicle |> Option.defaultValue []
 
 let step time events =
+    // TODO: there might be a racing condition?
+    // What should happen if at the same timepoint a truck unloads some cargo - can a ship pick it up?
     let eventsFromPort = moveCargoFromPort time events
     let mutable mEvents = events @ eventsFromPort
     let mutable tryMoveCargo = true
