@@ -152,8 +152,9 @@ let rec moveCargoFromFactory time events =
 let step time events =
     // TODO: there might be a racing condition?
     // What should happen if at the same timepoint a truck unloads some cargo - can a ship pick it up?
+    // Currently it depends wether we pass `events` or `events @ eventsFromPort` to moveCargoFromFactory
     let eventsFromPort = moveCargoFrom Port Domain.pickUpCargoAtPort time events
-    moveCargoFromFactory time events @ eventsFromPort
+    moveCargoFromFactory time (events @ eventsFromPort)
 
 let rec iterate time events =
     let newEvents = step time events
