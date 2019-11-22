@@ -34,22 +34,23 @@ type Event =
 type Entry = Event * Timepoint
 
 module Domain =
-    let pickUpCargoAtFactory time cargo truck =
-        match cargo with
-        | (_, A) ->
-            [ Entry(PickedUpShipment(cargo, Factory), time)
-              Entry(Departing(Truck truck, Factory, [ cargo ], Port), time)
-              Entry(PlannedArrival(Truck truck, Port, [ cargo ]), time + 1)
-              Entry(ParkedShipment(cargo, Port), time + 1)
+    let pickUpCargoAtFactory time cargos truck =
+        match cargos |> List.tryHead with
+        | Some ((_, A) as c) ->
+            [ Entry(PickedUpShipment(c, Factory), time)
+              Entry(Departing(Truck truck, Factory, [ c ], Port), time)
+              Entry(PlannedArrival(Truck truck, Port, [ c ]), time + 1)
+              Entry(ParkedShipment(c, Port), time + 1)
               Entry(Departing(Truck truck, Port, [], Factory), time + 1)
               Entry(PlannedArrival(Truck truck, Factory, []), time + 2) ]
-        | (_, B) ->
-            [ Entry(PickedUpShipment(cargo, Factory), time)
-              Entry(Departing(Truck truck, Factory, [ cargo ], Warehouse B), time)
-              Entry(PlannedArrival(Truck truck, Warehouse B, [ cargo ]), time + 5)
-              Entry(DeliveredShipment(cargo), time + 5)
+        | Some ((_, B) as c) ->
+            [ Entry(PickedUpShipment(c, Factory), time)
+              Entry(Departing(Truck truck, Factory, [ c ], Warehouse B), time)
+              Entry(PlannedArrival(Truck truck, Warehouse B, [ c ]), time + 5)
+              Entry(DeliveredShipment(c), time + 5)
               Entry(Departing(Truck truck, Warehouse B, [], Factory), time + 5)
               Entry(PlannedArrival(Truck truck, Factory, []), time + 10) ]
+        | None -> []          
 
     let pickUpCargoAtPort time cargos ship =
         if Seq.isEmpty cargos then
@@ -114,30 +115,29 @@ module Projections =
             | PickedUpShipment(c, Port) -> List.except [ c ] s
             | _ -> s)
 
-    let avaliableShip time events =
-        events
-        |> filterUntilNow time
-        |> Seq.choose (function
-            | VehicleProvided(Ship s, Port)
-            | PlannedArrival(Ship s, Port, _) -> Some <| Some (Ship s)
-            | Departing(Ship s, Port, _, _) -> Some None
-            | _ -> None)
-        |> Seq.tryLast
-        |> Option.flatten
+    let avaliableShip =
+        aggregate (fun s e -> 
+            match e with
+            | VehicleProvided(Ship ship, Port)
+            | PlannedArrival(Ship ship, Port, _) -> s @ [ Ship ship ]
+            | Departing(Ship ship, Port, _, _) -> List.except [Ship ship] s
+            | _ -> s)
 
 open Projections
 
 let moveCargoFromPort time events =
     let cargo = cargoWaitingOnPort time events
-    let vehicle = avaliableShip time events
+    let vehicle = avaliableShip time events |> List.tryHead
     vehicle
     |> Option.map (Domain.pickUpCargoAtPort time cargo)
     |> Option.defaultValue []
 
 let moveCargoFromFactory time events =
-    let cargo = cargoAtFactory time events |> List.tryHead
+    let cargo = cargoAtFactory time events
     let vehicle = trucksAtFactory time events |> List.tryHead
-    Option.map2 (Domain.pickUpCargoAtFactory time) cargo vehicle |> Option.defaultValue []
+    vehicle
+    |> Option.map (Domain.pickUpCargoAtFactory time cargo)
+    |> Option.defaultValue []
 
 let step time events =
     // TODO: there might be a racing condition?
