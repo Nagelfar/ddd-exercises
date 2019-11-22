@@ -176,6 +176,7 @@ let buildInitialEvents cargo =
 module Program =
     open System.Text.Json
     open System.Text.Json.Serialization
+    open Microsoft.FSharp.Core.Printf
 
     type CargoEntry =
         { Cargo_id: int
@@ -243,6 +244,17 @@ module Program =
         let options = JsonSerializerOptions(PropertyNamingPolicy=JsonNamingPolicy.CamelCase)
         JsonSerializer.Serialize (v , options)
 
+    let traceOutput events cargo =
+        use writer = new System.IO.StringWriter()
+        let appendLine format = fprintfn writer format
+        let highest = events |> findLatestDelivery
+        appendLine "# Deliver cargo %A within %i" cargo highest
+        events
+        |> convertToTrace
+        |> Seq.map serialize
+        |> Seq.iter (appendLine "%s")
+        writer.ToString()
+
     [<EntryPoint>]
     let main argv =
         if argv.Length < 1 then
@@ -257,15 +269,12 @@ module Program =
 
         if argv.Length = 1 then
             printfn "No explicit arguments given, fallback to time"
-        if Array.contains "time" argv then
+        if Array.contains "time" argv || argv.Length = 1 then
             let highest = events |> findLatestDelivery
             printfn "Highest time %A for route %A" highest cargo
         if Array.contains "events" argv then
             printfn "%A" events
         if Array.contains "trace" argv then
-            events
-            |> convertToTrace
-            |> Seq.map serialize
-            |> Seq.iter (fun f -> printfn "%s" f)
+            traceOutput events cargo |> printf "%s"
 
         0 // return an integer exit code
