@@ -3,25 +3,11 @@
  "traceEvents": [
   {
    "name": "FACTORY-B", 
-   "tid": "TRUCK:0", 
-   "ph": "B", 
-   "args": {
-    "cargo": [
-     "CARGO:FACTORY_B_0"
-    ], 
-    "transport": "TRUCK:0"
-   }, 
-   "pid": "TRUCK:0", 
-   "ts": 0, 
-   "cat": "ddd"
-  }, 
-  {
-   "name": "FACTORY-B", 
    "tid": "TRUCK:1", 
    "ph": "B", 
    "args": {
     "cargo": [
-     "CARGO:FACTORY_B_1"
+     "CARGO:FACTORY_B_0"
     ], 
     "transport": "TRUCK:1"
    }, 
@@ -30,28 +16,17 @@
    "cat": "ddd"
   }, 
   {
-   "tid": "TRUCK:0", 
-   "ph": "E", 
-   "args": {
-    "cargo": [
-     "CARGO:FACTORY_B_0"
-    ], 
-    "transport": "TRUCK:0"
-   }, 
-   "pid": "TRUCK:0", 
-   "ts": 5, 
-   "cat": "ddd"
-  }, 
-  {
-   "name": "B-FACTORY", 
-   "tid": "TRUCK:0", 
+   "name": "FACTORY-B", 
+   "tid": "TRUCK:2", 
    "ph": "B", 
    "args": {
-    "cargo": [], 
-    "transport": "TRUCK:0"
+    "cargo": [
+     "CARGO:FACTORY_B_1"
+    ], 
+    "transport": "TRUCK:2"
    }, 
-   "pid": "TRUCK:0", 
-   "ts": 5, 
+   "pid": "TRUCK:2", 
+   "ts": 0, 
    "cat": "ddd"
   }, 
   {
@@ -59,7 +34,7 @@
    "ph": "E", 
    "args": {
     "cargo": [
-     "CARGO:FACTORY_B_1"
+     "CARGO:FACTORY_B_0"
     ], 
     "transport": "TRUCK:1"
    }, 
@@ -80,24 +55,49 @@
    "cat": "ddd"
   }, 
   {
-   "tid": "TRUCK:0", 
+   "tid": "TRUCK:2", 
+   "ph": "E", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_1"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 5, 
+   "cat": "ddd"
+  }, 
+  {
+   "name": "B-FACTORY", 
+   "tid": "TRUCK:2", 
+   "ph": "B", 
+   "args": {
+    "cargo": [], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 5, 
+   "cat": "ddd"
+  }, 
+  {
+   "tid": "TRUCK:1", 
    "ph": "E", 
    "args": {
     "cargo": [], 
-    "transport": "TRUCK:0"
+    "transport": "TRUCK:1"
    }, 
-   "pid": "TRUCK:0", 
+   "pid": "TRUCK:1", 
    "ts": 10, 
    "cat": "ddd"
   }, 
   {
-   "tid": "TRUCK:1", 
+   "tid": "TRUCK:2", 
    "ph": "E", 
    "args": {
     "cargo": [], 
-    "transport": "TRUCK:1"
+    "transport": "TRUCK:2"
    }, 
-   "pid": "TRUCK:1", 
+   "pid": "TRUCK:2", 
    "ts": 10, 
    "cat": "ddd"
   }
