@@ -125,6 +125,14 @@ module Projections =
             | VehicleProvided(t, l) when l = location -> s @ [ t ]
             | _ -> s)
 
+    let cargoToBeMoved events =
+        events
+        |> List.map fst
+        |> List.sumBy (function
+            | CargoReadyForDelivery _ -> 1
+            | DeliveredShipment _ -> - 1
+            | _ -> 0)
+
 open Projections
 
 let moveCargoFrom location mover time events =
@@ -145,15 +153,11 @@ let step time events =
 
     mEvents
 
-let iterate intialEvents =
-    let mutable events: Entry list = intialEvents
-    let mutable finished = false
-    let mutable time = 0
-    while not finished do
-        events <- step time events
-        time <- time + 1
-        finished <- (cargoAt Factory time events).IsEmpty && (cargoAt Port time events).IsEmpty
-    events
+let rec iterate time events =
+    let newEvents = step time events
+    match cargoToBeMoved newEvents with
+    | 0 -> newEvents
+    | _ -> iterate (time + 1) newEvents
 
 let buildInitialEvents cargoDestination =
     let initialCargo = 
@@ -263,7 +267,7 @@ module Program =
         let events =
             cargo
             |> buildInitialEvents
-            |> iterate
+            |> iterate 0
 
         if argv.Length = 1 then printfn "No explicit arguments given, fallback to time"
         if Array.contains "time" argv || argv.Length = 1 then

@@ -6,7 +6,7 @@ open Exercise2
 let run cargo =
     cargo
     |> buildInitialEvents
-    |> iterate
+    |> iterate 0
 
 let printFile (cargo: Destination list) events=
     let filename = System.String.Join("", cargo) + ".log"
