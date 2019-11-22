@@ -140,18 +140,20 @@ let moveCargoFrom location mover time events =
     let vehicle = vehicleAt location time events
     mover time cargo vehicle
 
+let rec moveCargoFromFactory time events =
+    let movedEvents =
+        moveCargoFrom Factory Domain.pickUpCargoAtFactory time events
+
+    if movedEvents.IsEmpty then
+        events
+    else
+        moveCargoFromFactory time (events @ movedEvents)
+
 let step time events =
     // TODO: there might be a racing condition?
     // What should happen if at the same timepoint a truck unloads some cargo - can a ship pick it up?
     let eventsFromPort = moveCargoFrom Port Domain.pickUpCargoAtPort time events
-    let mutable mEvents = events @ eventsFromPort
-    let mutable tryMoveCargo = true
-    while tryMoveCargo do
-        let eventsFromFactory = moveCargoFrom Factory Domain.pickUpCargoAtFactory time mEvents
-        tryMoveCargo <- not eventsFromFactory.IsEmpty
-        mEvents <- mEvents @ eventsFromFactory
-
-    mEvents
+    moveCargoFromFactory time events @ eventsFromPort
 
 let rec iterate time events =
     let newEvents = step time events
