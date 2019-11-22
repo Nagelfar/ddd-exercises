@@ -241,7 +241,7 @@ module Program =
             | x -> failwithf "Unknown cargo %c" x)
 
     let serialize v =
-        let options = JsonSerializerOptions(PropertyNamingPolicy=JsonNamingPolicy.CamelCase)
+        let options = JsonSerializerOptions(PropertyNamingPolicy=JsonNamingPolicy.CamelCase,IgnoreNullValues=true)
         JsonSerializer.Serialize (v , options)
 
     let traceOutput events cargo =

@@ -1,0 +1,6 @@
+source http://artifactory.lkw-walter.com/artifactory/api/nuget/NuGet
+source http://artifactory.lkw-walter.com/artifactory/api/nuget/nuget-remote
+source https://api.nuget.org/v3/index.json
+
+nuget FSharp.Core
+nuget System.Text.Json
