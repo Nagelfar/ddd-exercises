@@ -14,8 +14,11 @@ type Location =
     | Warehouse of Destination
 
 type TransportIdentifier = Identifier of int
+
 type Truck = TransportIdentifier
+
 type Ship = TransportIdentifier
+
 type Vehicle =
     | Truck of Truck
     | Ship of Ship
@@ -34,7 +37,7 @@ type Entry = Event * Timepoint
 
 module Domain =
 
-    module Model = 
+    module Model =
 
         let travelTime location1 location2 =
             match location1, location2 with
@@ -46,75 +49,76 @@ module Domain =
         let unLoadingTime =
             function
             | Truck _ -> 0
-            | Ship _ -> 1   
-     
+            | Ship _ -> 1
+
         let vehicleCapacity =
             function
             | Truck _ -> 1
-            | Ship _ -> 4    
+            | Ship _ -> 4
 
         let initialVehicles =
-            [ VehicleProvided(Truck (Identifier 1), Factory)
-              VehicleProvided(Truck (Identifier 2), Factory)
-              VehicleProvided(Ship (Identifier 3), Port) ]        
-    
+            [ VehicleProvided(Truck(Identifier 1), Factory)
+              VehicleProvided(Truck(Identifier 2), Factory)
+              VehicleProvided(Ship(Identifier 3), Port) ]
+
     let findVehicleType filter vehichles =
         vehichles
         |> List.choose filter
         |> List.tryHead
 
-    let findShip = 
+    let findShip =
         function
         | Ship s -> Some s
-        | _ -> None    
+        | _ -> None
 
     let findTruck =
         function
         | Truck t -> Some t
-        | _ -> None    
+        | _ -> None
 
     let transportLeg time cargos vehicle origin destination =
         let travelSpeed = Model.travelTime origin destination
         let unLoadingSpeed = Model.unLoadingTime vehicle
         let capacity = Model.vehicleCapacity vehicle
         let transportableCargo = cargos |> List.truncate capacity
-        
-        let pickingUpShipments =
-            transportableCargo 
-            |> List.map(fun c -> Entry(PickedUpShipment(c, origin), time))
-        let travelToDestination =        
+
+        let pickingUpShipments = transportableCargo |> List.map (fun c -> Entry(PickedUpShipment(c, origin), time))
+
+        let travelToDestination =
             [ Entry(Departing(vehicle, origin, transportableCargo, destination), time + unLoadingSpeed)
-              Entry(PlannedArrival(vehicle, destination, transportableCargo), time +  unLoadingSpeed + travelSpeed)]
-        let deliveringShipments = 
+              Entry(PlannedArrival(vehicle, destination, transportableCargo), time + unLoadingSpeed + travelSpeed) ]
+
+        let deliveringShipments =
             transportableCargo
-            |> List.map (fun c -> Entry(MovedShipment(c, destination), time + unLoadingSpeed + travelSpeed + unLoadingSpeed))
+            |> List.map
+                (fun c -> Entry(MovedShipment(c, destination), time + unLoadingSpeed + travelSpeed + unLoadingSpeed))
+
         let travelBackToOrigin =
             [ Entry(Departing(vehicle, destination, [], origin), time + unLoadingSpeed + travelSpeed + unLoadingSpeed)
-              Entry(PlannedArrival(vehicle, origin, []), time + unLoadingSpeed + travelSpeed + unLoadingSpeed + travelSpeed)]
+              Entry
+                  (PlannedArrival(vehicle, origin, []),
+                   time + unLoadingSpeed + travelSpeed + unLoadingSpeed + travelSpeed) ]
 
-        pickingUpShipments @ travelToDestination @ deliveringShipments @ travelBackToOrigin 
+        pickingUpShipments @ travelToDestination @ deliveringShipments @ travelBackToOrigin
 
     let pickUpCargoAtFactory time cargos vehicles =
-        let potentialTruck = findVehicleType findTruck vehicles            
+        let potentialTruck = findVehicleType findTruck vehicles
         match cargos |> List.tryHead, potentialTruck with
-        | Some ((_, A) as c) , Some truck ->
-            transportLeg time [c] (Truck truck) Factory Port
-        | Some ((_, B) as c), Some truck ->
-            transportLeg time [c] (Truck truck) Factory (Warehouse B)
-        | _ -> []          
+        | Some((_, A) as c), Some truck -> transportLeg time [ c ] (Truck truck) Factory Port
+        | Some((_, B) as c), Some truck -> transportLeg time [ c ] (Truck truck) Factory (Warehouse B)
+        | _ -> []
 
     let pickUpCargoAtPort time cargos vehichles =
-        let potentialShip = findVehicleType findShip vehichles            
+        let potentialShip = findVehicleType findShip vehichles
         match cargos, potentialShip with
-        | cargo, Some ship when not <| List.isEmpty cargo -> 
-            transportLeg time cargo (Ship ship) Port (Warehouse A)
+        | cargo, Some ship when not <| List.isEmpty cargo -> transportLeg time cargo (Ship ship) Port (Warehouse A)
         | _ -> []
 
 module Projections =
     let findLatestDelivery events =
         events
         |> Seq.choose (function
-            | MovedShipment (_, Warehouse _), t -> Some t
+            | MovedShipment(_, Warehouse _), t -> Some t
             | _ -> None)
         |> Seq.max
 
@@ -131,10 +135,10 @@ module Projections =
     let cargoAt location =
         aggregate (fun s e ->
             match e with
-            | CargoReadyForDelivery (c, l)
+            | CargoReadyForDelivery(c, l)
             | MovedShipment(c, l) when l = location -> s @ [ c ]
             | PickedUpShipment(c, l) when l = location -> List.except [ c ] s
-            | _ -> s)        
+            | _ -> s)
 
     let vehicleAt location =
         aggregate (fun s e ->
@@ -149,7 +153,7 @@ module Projections =
         |> List.map fst
         |> List.sumBy (function
             | CargoReadyForDelivery _ -> 1
-            | MovedShipment(_, Warehouse _) -> - 1
+            | MovedShipment(_, Warehouse _) -> -1
             | _ -> 0)
 
 let moveCargoFrom location mover time events =
@@ -158,13 +162,10 @@ let moveCargoFrom location mover time events =
     mover time cargo vehicle
 
 let rec moveCargoFromFactory time events =
-    let movedEvents =
-        moveCargoFrom Factory Domain.pickUpCargoAtFactory time events
+    let movedEvents = moveCargoFrom Factory Domain.pickUpCargoAtFactory time events
 
-    if movedEvents.IsEmpty then
-        events
-    else
-        moveCargoFromFactory time (events @ movedEvents)
+    if movedEvents.IsEmpty then events
+    else moveCargoFromFactory time (events @ movedEvents)
 
 let step time events =
     // TODO: there might be a racing condition?
@@ -180,9 +181,8 @@ let rec iterate time events =
     | _ -> iterate (time + 1) newEvents
 
 let buildInitialEvents cargoDestination =
-    let initialCargo = 
-        cargoDestination
-        |> List.mapi (fun i c -> CargoReadyForDelivery((CargoIdentifier.Identifier i, c), Factory))
+    let initialCargo =
+        cargoDestination |> List.mapi (fun i c -> CargoReadyForDelivery((CargoIdentifier.Identifier i, c), Factory))
 
     List.concat [ initialCargo; Domain.Model.initialVehicles ] |> List.map (fun e -> e, 0)
 
@@ -207,8 +207,8 @@ module Program =
 
     let transportId =
         function
-        | Truck (Identifier t) -> t
-        | Ship (Identifier s) -> s 
+        | Truck(Identifier t) -> t
+        | Ship(Identifier s) -> s
 
     let convertVehicle =
         function
