@@ -29,8 +29,8 @@ type Event =
     | CargoReadyForDelivery of Cargo
     | VehicleProvided of Vehicle * Location
     | TransportCreated of TransportIdentifier
-    | Departing of TransportIdentifier * Vehicle * from: Location * Cargo option * destination: Location
-    | PlannedArrival of TransportIdentifier * Vehicle * destination: Location * Cargo option
+    | Departing of TransportIdentifier * Vehicle * from: Location * Cargo list * destination: Location
+    | PlannedArrival of TransportIdentifier * Vehicle * destination: Location * Cargo list
     | ParkedShipment of Cargo * Location
     | PickedUpShipment of Cargo * Location
     | DeliveredShipment of Cargo
@@ -43,28 +43,43 @@ module Domain =
         | (_, A) ->
             [ Entry(TransportCreated(transportId), time)
               Entry(PickedUpShipment(cargo, Factory), time)
-              Entry(Departing(transportId, Truck truck, Factory, Some cargo, Port), time)
-              Entry(PlannedArrival(transportId, Truck truck, Port, Some cargo), time + 1)
+              Entry(Departing(transportId, Truck truck, Factory, [cargo], Port), time)
+              Entry(PlannedArrival(transportId, Truck truck, Port, [cargo]), time + 1)
               Entry(ParkedShipment(cargo, Port), time + 1)
-              Entry(Departing(transportId, Truck truck, Port, None, Factory), time + 1)
-              Entry(PlannedArrival(transportId, Truck truck, Factory, None), time + 2) ]
+              Entry(Departing(transportId, Truck truck, Port, [], Factory), time + 1)
+              Entry(PlannedArrival(transportId, Truck truck, Factory, []), time + 2) ]
         | (_, B) ->
             [ Entry(TransportCreated(transportId), time)
               Entry(PickedUpShipment(cargo, Factory), time)
-              Entry(Departing(transportId, Truck truck, Factory, Some cargo, Warehouse B), time)
-              Entry(PlannedArrival(transportId, Truck truck, Warehouse B, Some cargo), time + 5)
+              Entry(Departing(transportId, Truck truck, Factory, [cargo], Warehouse B), time)
+              Entry(PlannedArrival(transportId, Truck truck, Warehouse B, [cargo]), time + 5)
               Entry(DeliveredShipment(cargo), time + 5)
-              Entry(Departing(transportId, Truck truck, Warehouse B, None, Factory), time + 5)
-              Entry(PlannedArrival(transportId, Truck truck, Factory,None), time + 10) ]
+              Entry(Departing(transportId, Truck truck, Warehouse B, [], Factory), time + 5)
+              Entry(PlannedArrival(transportId, Truck truck, Factory,[]), time + 10) ]
 
-    let pickUpCargoAtPort time transportId cargo ship =
-        [ Entry(TransportCreated(transportId), time)
-          Entry(PickedUpShipment(cargo, Port), time)
-          Entry(Departing(transportId, ship, Port, Some cargo, Warehouse A), time)
-          Entry(PlannedArrival(transportId, ship, Warehouse A,Some cargo), time + 4) 
-          Entry(DeliveredShipment(cargo), time + 4)
-          Entry(Departing(transportId, ship, Warehouse A, None, Port), time + 4)
-          Entry(PlannedArrival(transportId, ship, Port,None), time + 8) ]
+    let pickUpCargoAtPort time transportId cargos ship =
+        if Seq.isEmpty cargos then
+            []
+        else        
+            let travelSpeed = 6
+            let unLoadingSpeed = 1
+            let capacity = 4
+            let transportableCargo = cargos |> List.truncate capacity
+            let pickingUpShipments =
+                transportableCargo 
+                |> List.map(fun c -> Entry(PickedUpShipment(c,Port), time))
+            let deliveredShipments = 
+                transportableCargo
+                |> List.map (fun c -> Entry(DeliveredShipment(c), time + unLoadingSpeed + travelSpeed + unLoadingSpeed))
+
+            [ Entry(TransportCreated(transportId), time) ] 
+                @ pickingUpShipments 
+                @ [ Entry(Departing(transportId, ship, Port, transportableCargo, Warehouse A), time + unLoadingSpeed)
+                    Entry(PlannedArrival(transportId, ship, Warehouse A, transportableCargo), time +  unLoadingSpeed + travelSpeed)]
+                @ deliveredShipments
+                @ [ Entry(Departing(transportId, ship, Warehouse A, [], Port), time + unLoadingSpeed + travelSpeed + unLoadingSpeed)
+                    Entry(PlannedArrival(transportId, ship, Port, []), time + unLoadingSpeed + travelSpeed + unLoadingSpeed + travelSpeed)]
+
 
 module Projections =
     let findLatestDelivery events =
@@ -131,10 +146,12 @@ module Projections =
 open Projections
 
 let moveCargoFromPort time events =
-    let cargo = cargoWaitingOnPort time events |> List.tryHead
+    let cargo = cargoWaitingOnPort time events
     let vehicle = avaliableShip time events
     let nextId = nextTransportId events
-    Option.map2 (Domain.pickUpCargoAtPort time nextId) cargo vehicle |> Option.defaultValue []
+    vehicle
+    |> Option.map (Domain.pickUpCargoAtPort time nextId cargo)
+    |> Option.defaultValue []
 
 let moveCargoFromFactory time events =
     let cargo = cargoAtFactory time events |> List.tryHead
@@ -219,7 +236,7 @@ module Program =
                   Kind = convertVehicle v
                   Location = convertLocation f
                   Destination = convertLocation d
-                  Cargo = c |> Option.map convertCargo |> Option.toList }
+                  Cargo = c |> List.map convertCargo }
                 |> Some
             | PlannedArrival(Identifier(id), v, d, c), time ->
                 { Event = "ARRIVE"
@@ -228,7 +245,7 @@ module Program =
                   Kind = convertVehicle v
                   Location = convertLocation d
                   Destination = null
-                  Cargo = c |> Option.map convertCargo |> Option.toList  }
+                  Cargo = c |> List.map convertCargo }
                 |> Some
             | _ -> None)
                 
