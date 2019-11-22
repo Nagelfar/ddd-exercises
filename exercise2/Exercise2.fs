@@ -43,24 +43,24 @@ module Domain =
         | (_, A) ->
             [ Entry(TransportCreated(transportId), time)
               Entry(PickedUpShipment(cargo, Factory), time)
-              Entry(Departing(transportId, Truck truck, Factory, [cargo], Port), time)
-              Entry(PlannedArrival(transportId, Truck truck, Port, [cargo]), time + 1)
+              Entry(Departing(transportId, Truck truck, Factory, [ cargo ], Port), time)
+              Entry(PlannedArrival(transportId, Truck truck, Port, [ cargo ]), time + 1)
               Entry(ParkedShipment(cargo, Port), time + 1)
               Entry(Departing(transportId, Truck truck, Port, [], Factory), time + 1)
               Entry(PlannedArrival(transportId, Truck truck, Factory, []), time + 2) ]
         | (_, B) ->
             [ Entry(TransportCreated(transportId), time)
               Entry(PickedUpShipment(cargo, Factory), time)
-              Entry(Departing(transportId, Truck truck, Factory, [cargo], Warehouse B), time)
-              Entry(PlannedArrival(transportId, Truck truck, Warehouse B, [cargo]), time + 5)
+              Entry(Departing(transportId, Truck truck, Factory, [ cargo ], Warehouse B), time)
+              Entry(PlannedArrival(transportId, Truck truck, Warehouse B, [ cargo ]), time + 5)
               Entry(DeliveredShipment(cargo), time + 5)
               Entry(Departing(transportId, Truck truck, Warehouse B, [], Factory), time + 5)
-              Entry(PlannedArrival(transportId, Truck truck, Factory,[]), time + 10) ]
+              Entry(PlannedArrival(transportId, Truck truck, Factory, []), time + 10) ]
 
     let pickUpCargoAtPort time transportId cargos ship =
         if Seq.isEmpty cargos then
             []
-        else        
+        else
             let travelSpeed = 6
             let unLoadingSpeed = 1
             let capacity = 4
@@ -114,7 +114,7 @@ module Projections =
         aggregate (fun s e ->
             match e with
             | Departing(_, Truck t, Factory, _, _) -> List.except [ t ] s
-            | PlannedArrival(_, Truck t, Factory,_)
+            | PlannedArrival(_, Truck t, Factory, _)
             | VehicleProvided(Truck t, Factory) -> s @ [ t ]
             | _ -> s)
 
@@ -137,7 +137,7 @@ module Projections =
         |> filterUntilNow time
         |> Seq.choose (function
             | VehicleProvided(Ship, Port)
-            | PlannedArrival(_, Ship, Port,_) -> Some <| Some Ship
+            | PlannedArrival(_, Ship, Port, _) -> Some <| Some Ship
             | Departing(_, Ship, Port, _, _) -> Some None
             | _ -> None)
         |> Seq.tryLast
@@ -248,9 +248,9 @@ module Program =
                   Cargo = c |> List.map convertCargo }
                 |> Some
             | _ -> None)
-                
 
-    let parseInput (input: string ) =
+
+    let parseInput (input: string) =
         input.ToCharArray()
         |> Seq.map (function
             | 'A' -> A
@@ -258,8 +258,8 @@ module Program =
             | x -> failwithf "Unknown cargo %c" x)
 
     let serialize v =
-        let options = JsonSerializerOptions(PropertyNamingPolicy=JsonNamingPolicy.CamelCase,IgnoreNullValues=true)
-        JsonSerializer.Serialize (v , options)
+        let options = JsonSerializerOptions(PropertyNamingPolicy = JsonNamingPolicy.CamelCase, IgnoreNullValues = true)
+        JsonSerializer.Serialize(v, options)
 
     let traceOutput events cargo =
         use writer = new System.IO.StringWriter()
@@ -274,8 +274,7 @@ module Program =
 
     [<EntryPoint>]
     let main argv =
-        if argv.Length < 1 then
-            failwithf "Expecting at least a single string containing the cargo list but got %A" argv
+        if argv.Length < 1 then failwithf "Expecting at least a single string containing the cargo list but got %A" argv
 
         let cargo = parseInput argv.[0] |> Seq.toList
 
@@ -284,14 +283,11 @@ module Program =
             |> buildInitialEvents
             |> iterate
 
-        if argv.Length = 1 then
-            printfn "No explicit arguments given, fallback to time"
+        if argv.Length = 1 then printfn "No explicit arguments given, fallback to time"
         if Array.contains "time" argv || argv.Length = 1 then
             let highest = events |> findLatestDelivery
             printfn "Highest time %A for route %A" highest cargo
-        if Array.contains "events" argv then
-            printfn "%A" events
-        if Array.contains "trace" argv then
-            traceOutput events cargo |> printf "%s"
+        if Array.contains "events" argv then printfn "%A" events
+        if Array.contains "trace" argv then traceOutput events cargo |> printf "%s"
 
         0 // return an integer exit code
