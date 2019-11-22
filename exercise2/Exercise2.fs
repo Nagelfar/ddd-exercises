@@ -34,6 +34,19 @@ type Event =
 type Entry = Event * Timepoint
 
 module Domain =
+
+    let travelTime location1 location2 =
+        match location1, location2 with
+        | Factory, Port -> 1
+        | Factory, Warehouse B -> 5
+        | Port, Warehouse A -> 6
+        | _ -> failwithf "Traveltime not configured for %A to %A" location1 location2
+
+    let unLoadingTime =
+        function
+        | Truck _ -> 0
+        | Ship _ -> 1    
+    
     let findVehicleType filter vehichles =
         vehichles
         |> List.choose filter
@@ -52,28 +65,33 @@ module Domain =
     let pickUpCargoAtFactory time cargos vehicles =
         let potentialTruck = findVehicleType findTruck vehicles            
         match cargos |> List.tryHead, potentialTruck with
-        | Some ((_, A) as c) , Some truck->
+        | Some ((_, A) as c) , Some truck ->
+            let tt = travelTime Factory Port
+            let unLoadingSpeed = unLoadingTime <| Truck truck
+
             [ Entry(PickedUpShipment(c, Factory), time)
-              Entry(Departing(Truck truck, Factory, [ c ], Port), time)
-              Entry(PlannedArrival(Truck truck, Port, [ c ]), time + 1)
-              Entry(ParkedShipment(c, Port), time + 1)
-              Entry(Departing(Truck truck, Port, [], Factory), time + 1)
-              Entry(PlannedArrival(Truck truck, Factory, []), time + 2) ]
+              Entry(Departing(Truck truck, Factory, [ c ], Port), time + unLoadingSpeed)
+              Entry(PlannedArrival(Truck truck, Port, [ c ]), time + unLoadingSpeed + tt)
+              Entry(ParkedShipment(c, Port), time + unLoadingSpeed + tt + unLoadingSpeed)
+              Entry(Departing(Truck truck, Port, [], Factory), time + unLoadingSpeed + tt + unLoadingSpeed)
+              Entry(PlannedArrival(Truck truck, Factory, []), time + unLoadingSpeed + tt + unLoadingSpeed + tt) ]
         | Some ((_, B) as c), Some truck ->
+            let tt = travelTime Factory <| Warehouse B
+            let unLoadingSpeed = unLoadingTime <| Truck truck
             [ Entry(PickedUpShipment(c, Factory), time)
-              Entry(Departing(Truck truck, Factory, [ c ], Warehouse B), time)
-              Entry(PlannedArrival(Truck truck, Warehouse B, [ c ]), time + 5)
-              Entry(DeliveredShipment(c), time + 5)
-              Entry(Departing(Truck truck, Warehouse B, [], Factory), time + 5)
-              Entry(PlannedArrival(Truck truck, Factory, []), time + 10) ]
+              Entry(Departing(Truck truck, Factory, [ c ], Warehouse B), time + unLoadingSpeed)
+              Entry(PlannedArrival(Truck truck, Warehouse B, [ c ]), time + unLoadingSpeed + tt)
+              Entry(DeliveredShipment(c), time + unLoadingSpeed + tt + unLoadingSpeed)
+              Entry(Departing(Truck truck, Warehouse B, [], Factory), time + unLoadingSpeed + tt + unLoadingSpeed)
+              Entry(PlannedArrival(Truck truck, Factory, []), time + unLoadingSpeed + tt + unLoadingSpeed + tt) ]
         | _ -> []          
 
     let pickUpCargoAtPort time cargos vehichles =
         let potentialShip = findVehicleType findShip vehichles            
         match cargos, potentialShip with
         | cargo, Some ship when not <| List.isEmpty cargo -> 
-            let travelSpeed = 6
-            let unLoadingSpeed = 1
+            let travelSpeed = travelTime Port <| Warehouse A 
+            let unLoadingSpeed = unLoadingTime <| Ship ship
             let capacity = 4
             let transportableCargo = cargos |> List.truncate capacity
             let pickingUpShipments =
@@ -133,11 +151,9 @@ module Projections =
             | DeliveredShipment _ -> - 1
             | _ -> 0)
 
-open Projections
-
 let moveCargoFrom location mover time events =
-    let cargo =  cargoAt location time events
-    let vehicle = vehicleAt location time events
+    let cargo = Projections.cargoAt location time events
+    let vehicle = Projections.vehicleAt location time events
     mover time cargo vehicle
 
 let rec moveCargoFromFactory time events =
@@ -158,7 +174,7 @@ let step time events =
 
 let rec iterate time events =
     let newEvents = step time events
-    match cargoToBeMoved newEvents with
+    match Projections.cargoToBeMoved newEvents with
     | 0 -> newEvents
     | _ -> iterate (time + 1) newEvents
 
@@ -253,7 +269,7 @@ module Program =
     let traceOutput events cargo =
         use writer = new System.IO.StringWriter()
         let appendLine format = fprintfn writer format
-        let highest = events |> findLatestDelivery
+        let highest = events |> Projections.findLatestDelivery
         appendLine "# Deliver cargo %A within %i" cargo highest
         events
         |> convertToTrace
@@ -274,7 +290,7 @@ module Program =
 
         if argv.Length = 1 then printfn "No explicit arguments given, fallback to time"
         if Array.contains "time" argv || argv.Length = 1 then
-            let highest = events |> findLatestDelivery
+            let highest = events |> Projections.findLatestDelivery
             printfn "Highest time %A for route %A" highest cargo
         if Array.contains "events" argv then printfn "%A" events
         if Array.contains "trace" argv then traceOutput events cargo |> printf "%s"
