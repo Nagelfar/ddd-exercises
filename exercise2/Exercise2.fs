@@ -25,13 +25,15 @@ type Vehicle =
 
 type Timepoint = int
 
+type Duration = int
+
 type Event =
     | CargoReadyForDelivery of Cargo * Location
     | VehicleProvided of Vehicle * Location
     | Departing of Vehicle * from: Location * Cargo list * destination: Location
     | PlannedArrival of Vehicle * destination: Location * Cargo list
-    | MovedShipment of Cargo * Location
-    | PickedUpShipment of Cargo * Location
+    | MovedShipment of Cargo list * Location * Duration * Vehicle
+    | PickedUpShipment of Cargo list * Location * Duration * Vehicle
 
 type Entry = Event * Timepoint
 
@@ -82,16 +84,16 @@ module Domain =
         let capacity = Model.vehicleCapacity vehicle
         let transportableCargo = cargos |> List.truncate capacity
 
-        let pickingUpShipments = transportableCargo |> List.map (fun c -> Entry(PickedUpShipment(c, origin), time))
+        let pickingUpShipment = Entry(PickedUpShipment(transportableCargo, origin, unLoadingSpeed, vehicle), time)
 
         let travelToDestination =
             [ Entry(Departing(vehicle, origin, transportableCargo, destination), time + unLoadingSpeed)
               Entry(PlannedArrival(vehicle, destination, transportableCargo), time + unLoadingSpeed + travelSpeed) ]
 
-        let deliveringShipments =
-            transportableCargo
-            |> List.map
-                (fun c -> Entry(MovedShipment(c, destination), time + unLoadingSpeed + travelSpeed + unLoadingSpeed))
+        let deliveringShipment =
+            Entry
+                (MovedShipment(transportableCargo, destination, unLoadingSpeed, vehicle),
+                 time + unLoadingSpeed + travelSpeed + unLoadingSpeed)
 
         let travelBackToOrigin =
             [ Entry(Departing(vehicle, destination, [], origin), time + unLoadingSpeed + travelSpeed + unLoadingSpeed)
@@ -99,7 +101,7 @@ module Domain =
                   (PlannedArrival(vehicle, origin, []),
                    time + unLoadingSpeed + travelSpeed + unLoadingSpeed + travelSpeed) ]
 
-        pickingUpShipments @ travelToDestination @ deliveringShipments @ travelBackToOrigin
+        [ pickingUpShipment ] @ travelToDestination @ [ deliveringShipment ] @ travelBackToOrigin
 
     let pickUpCargoAtFactory time cargos vehicles =
         let potentialTruck = findVehicleType findTruck vehicles
@@ -118,7 +120,7 @@ module Projections =
     let findLatestDelivery events =
         events
         |> Seq.choose (function
-            | MovedShipment(_, Warehouse _), t -> Some t
+            | MovedShipment(_, Warehouse _, _, _), t -> Some t
             | _ -> None)
         |> Seq.max
 
@@ -135,9 +137,9 @@ module Projections =
     let cargoAt location =
         aggregate (fun s e ->
             match e with
-            | CargoReadyForDelivery(c, l)
-            | MovedShipment(c, l) when l = location -> s @ [ c ]
-            | PickedUpShipment(c, l) when l = location -> List.except [ c ] s
+            | CargoReadyForDelivery(c, l) when l = location -> s @ [ c ]
+            | MovedShipment(c, l, _, _) when l = location -> s @ c
+            | PickedUpShipment(c, l, _, _) when l = location -> List.except c s
             | _ -> s)
 
     let vehicleAt location =
@@ -153,7 +155,7 @@ module Projections =
         |> List.map fst
         |> List.sumBy (function
             | CargoReadyForDelivery _ -> 1
-            | MovedShipment(_, Warehouse _) -> -1
+            | MovedShipment(c, Warehouse _, _, _) -> -c.Length
             | _ -> 0)
 
 let moveCargoFrom location mover time events =
@@ -188,7 +190,6 @@ let buildInitialEvents cargoDestination =
 
 module Program =
     open System.Text.Json
-    open System.Text.Json.Serialization
     open Microsoft.FSharp.Core.Printf
 
     type CargoEntry =
@@ -203,6 +204,7 @@ module Program =
           Kind: string
           Location: string
           Destination: string
+          Duration: int option
           Cargo: CargoEntry list }
 
     let transportId =
@@ -237,6 +239,7 @@ module Program =
                   Kind = convertVehicle v
                   Location = convertLocation f
                   Destination = convertLocation d
+                  Duration = None
                   Cargo = c |> List.map convertCargo }
                 |> Some
             | PlannedArrival(v, d, c), time ->
@@ -246,6 +249,27 @@ module Program =
                   Kind = convertVehicle v
                   Location = convertLocation d
                   Destination = null
+                  Duration = None
+                  Cargo = c |> List.map convertCargo }
+                |> Some
+            | PickedUpShipment(c, l, d, v), time ->
+                { Event = "LOAD"
+                  Time = time
+                  Transport_id = transportId v
+                  Kind = convertVehicle v
+                  Location = convertLocation l
+                  Destination = null
+                  Duration = Some d
+                  Cargo = c |> List.map convertCargo }
+                |> Some
+            | MovedShipment(c, l, d, v), time ->
+                { Event = "UNLOAD"
+                  Time = time - d
+                  Transport_id = transportId v
+                  Kind = convertVehicle v
+                  Location = convertLocation l
+                  Destination = null
+                  Duration = Some d
                   Cargo = c |> List.map convertCargo }
                 |> Some
             | _ -> None)
