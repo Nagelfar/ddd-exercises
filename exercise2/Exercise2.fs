@@ -204,7 +204,7 @@ module Program =
           Kind: string
           Location: string
           Destination: string
-          Duration: int option
+          Duration: string
           Cargo: CargoEntry list }
 
     let transportId =
@@ -239,7 +239,7 @@ module Program =
                   Kind = convertVehicle v
                   Location = convertLocation f
                   Destination = convertLocation d
-                  Duration = None
+                  Duration = null
                   Cargo = c |> List.map convertCargo }
                 |> Some
             | PlannedArrival(v, d, c), time ->
@@ -249,7 +249,7 @@ module Program =
                   Kind = convertVehicle v
                   Location = convertLocation d
                   Destination = null
-                  Duration = None
+                  Duration = null
                   Cargo = c |> List.map convertCargo }
                 |> Some
             | PickedUpShipment(c, l, d, v), time ->
@@ -259,7 +259,7 @@ module Program =
                   Kind = convertVehicle v
                   Location = convertLocation l
                   Destination = null
-                  Duration = Some d
+                  Duration = string d
                   Cargo = c |> List.map convertCargo }
                 |> Some
             | MovedShipment(c, l, d, v), time ->
@@ -269,7 +269,7 @@ module Program =
                   Kind = convertVehicle v
                   Location = convertLocation l
                   Destination = null
-                  Duration = Some d
+                  Duration = string d
                   Cargo = c |> List.map convertCargo }
                 |> Some
             | _ -> None)

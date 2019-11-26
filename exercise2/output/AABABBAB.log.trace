@@ -2,6 +2,21 @@
  "displayTimeUnit": "ms", 
  "traceEvents": [
   {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_0"
+    ], 
+    "transport": "TRUCK:1"
+   }, 
+   "pid": "TRUCK:1", 
+   "ts": 0, 
+   "cat": "ddd", 
+   "tid": "TRUCK:1", 
+   "ph": "X", 
+   "dur": "0"
+  }, 
+  {
    "name": "FACTORY-PORT", 
    "tid": "TRUCK:1", 
    "ph": "B", 
@@ -14,6 +29,21 @@
    "pid": "TRUCK:1", 
    "ts": 0, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_1"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 0, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "FACTORY-PORT", 
@@ -43,6 +73,21 @@
    "cat": "ddd"
   }, 
   {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_0"
+    ], 
+    "transport": "TRUCK:1"
+   }, 
+   "pid": "TRUCK:1", 
+   "ts": 1, 
+   "cat": "ddd", 
+   "tid": "TRUCK:1", 
+   "ph": "X", 
+   "dur": "0"
+  }, 
+  {
    "name": "PORT-FACTORY", 
    "tid": "TRUCK:1", 
    "ph": "B", 
@@ -68,6 +113,21 @@
    "cat": "ddd"
   }, 
   {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_1"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 1, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
+  }, 
+  {
    "name": "PORT-FACTORY", 
    "tid": "TRUCK:2", 
    "ph": "B", 
@@ -78,6 +138,22 @@
    "pid": "TRUCK:2", 
    "ts": 1, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_0", 
+     "CARGO:FACTORY_A_1"
+    ], 
+    "transport": "SHIP:3"
+   }, 
+   "pid": "SHIP:3", 
+   "ts": 1, 
+   "cat": "ddd", 
+   "tid": "SHIP:3", 
+   "ph": "X", 
+   "dur": "1"
   }, 
   {
    "tid": "TRUCK:1", 
@@ -117,6 +193,21 @@
    "cat": "ddd"
   }, 
   {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_2"
+    ], 
+    "transport": "TRUCK:1"
+   }, 
+   "pid": "TRUCK:1", 
+   "ts": 2, 
+   "cat": "ddd", 
+   "tid": "TRUCK:1", 
+   "ph": "X", 
+   "dur": "0"
+  }, 
+  {
    "name": "FACTORY-B", 
    "tid": "TRUCK:1", 
    "ph": "B", 
@@ -129,6 +220,21 @@
    "pid": "TRUCK:1", 
    "ts": 2, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_3"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 2, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "FACTORY-PORT", 
@@ -158,6 +264,21 @@
    "cat": "ddd"
   }, 
   {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_3"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 3, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
+  }, 
+  {
    "name": "PORT-FACTORY", 
    "tid": "TRUCK:2", 
    "ph": "B", 
@@ -179,6 +300,21 @@
    "pid": "TRUCK:2", 
    "ts": 4, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_4"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 4, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "FACTORY-B", 
@@ -206,6 +342,21 @@
    "pid": "TRUCK:1", 
    "ts": 7, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_2"
+    ], 
+    "transport": "TRUCK:1"
+   }, 
+   "pid": "TRUCK:1", 
+   "ts": 7, 
+   "cat": "ddd", 
+   "tid": "TRUCK:1", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "B-FACTORY", 
@@ -234,6 +385,22 @@
    "cat": "ddd"
   }, 
   {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_0", 
+     "CARGO:FACTORY_A_1"
+    ], 
+    "transport": "SHIP:3"
+   }, 
+   "pid": "SHIP:3", 
+   "ts": 8, 
+   "cat": "ddd", 
+   "tid": "SHIP:3", 
+   "ph": "X", 
+   "dur": "1"
+  }, 
+  {
    "name": "A-PORT", 
    "tid": "SHIP:3", 
    "ph": "B", 
@@ -259,6 +426,21 @@
    "cat": "ddd"
   }, 
   {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_4"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 9, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
+  }, 
+  {
    "name": "B-FACTORY", 
    "tid": "TRUCK:2", 
    "ph": "B", 
@@ -280,6 +462,21 @@
    "pid": "TRUCK:1", 
    "ts": 12, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_5"
+    ], 
+    "transport": "TRUCK:1"
+   }, 
+   "pid": "TRUCK:1", 
+   "ts": 12, 
+   "cat": "ddd", 
+   "tid": "TRUCK:1", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "FACTORY-B", 
@@ -305,6 +502,21 @@
    "pid": "TRUCK:2", 
    "ts": 14, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_6"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 14, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "FACTORY-PORT", 
@@ -345,6 +557,21 @@
    "cat": "ddd"
   }, 
   {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_6"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 15, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
+  }, 
+  {
    "name": "PORT-FACTORY", 
    "tid": "TRUCK:2", 
    "ph": "B", 
@@ -355,6 +582,22 @@
    "pid": "TRUCK:2", 
    "ts": 15, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_3", 
+     "CARGO:FACTORY_A_6"
+    ], 
+    "transport": "SHIP:3"
+   }, 
+   "pid": "SHIP:3", 
+   "ts": 15, 
+   "cat": "ddd", 
+   "tid": "SHIP:3", 
+   "ph": "X", 
+   "dur": "1"
   }, 
   {
    "tid": "TRUCK:2", 
@@ -381,6 +624,21 @@
    "pid": "SHIP:3", 
    "ts": 16, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_7"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 16, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "FACTORY-B", 
@@ -410,6 +668,21 @@
    "cat": "ddd"
   }, 
   {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_5"
+    ], 
+    "transport": "TRUCK:1"
+   }, 
+   "pid": "TRUCK:1", 
+   "ts": 17, 
+   "cat": "ddd", 
+   "tid": "TRUCK:1", 
+   "ph": "X", 
+   "dur": "0"
+  }, 
+  {
    "name": "B-FACTORY", 
    "tid": "TRUCK:1", 
    "ph": "B", 
@@ -433,6 +706,21 @@
    "pid": "TRUCK:2", 
    "ts": 21, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_7"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 21, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "B-FACTORY", 
@@ -470,6 +758,22 @@
    "pid": "SHIP:3", 
    "ts": 22, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_A_3", 
+     "CARGO:FACTORY_A_6"
+    ], 
+    "transport": "SHIP:3"
+   }, 
+   "pid": "SHIP:3", 
+   "ts": 22, 
+   "cat": "ddd", 
+   "tid": "SHIP:3", 
+   "ph": "X", 
+   "dur": "1"
   }, 
   {
    "name": "A-PORT", 

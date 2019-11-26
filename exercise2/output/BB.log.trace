@@ -2,6 +2,21 @@
  "displayTimeUnit": "ms", 
  "traceEvents": [
   {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_0"
+    ], 
+    "transport": "TRUCK:1"
+   }, 
+   "pid": "TRUCK:1", 
+   "ts": 0, 
+   "cat": "ddd", 
+   "tid": "TRUCK:1", 
+   "ph": "X", 
+   "dur": "0"
+  }, 
+  {
    "name": "FACTORY-B", 
    "tid": "TRUCK:1", 
    "ph": "B", 
@@ -14,6 +29,21 @@
    "pid": "TRUCK:1", 
    "ts": 0, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "LOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_1"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 0, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "FACTORY-B", 
@@ -41,6 +71,21 @@
    "pid": "TRUCK:1", 
    "ts": 5, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_0"
+    ], 
+    "transport": "TRUCK:1"
+   }, 
+   "pid": "TRUCK:1", 
+   "ts": 5, 
+   "cat": "ddd", 
+   "tid": "TRUCK:1", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "B-FACTORY", 
@@ -66,6 +111,21 @@
    "pid": "TRUCK:2", 
    "ts": 5, 
    "cat": "ddd"
+  }, 
+  {
+   "name": "UNLOAD", 
+   "args": {
+    "cargo": [
+     "CARGO:FACTORY_B_1"
+    ], 
+    "transport": "TRUCK:2"
+   }, 
+   "pid": "TRUCK:2", 
+   "ts": 5, 
+   "cat": "ddd", 
+   "tid": "TRUCK:2", 
+   "ph": "X", 
+   "dur": "0"
   }, 
   {
    "name": "B-FACTORY", 
