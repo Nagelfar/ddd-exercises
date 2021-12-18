@@ -1,4 +1,4 @@
-# Deliver cargo [A; B; B] within 9
+# Deliver cargo [A; B; B] within 7
 {"event":"LOAD","time":0,"transport_id":1,"kind":"TRUCK","location":"FACTORY","duration":"0","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
 {"event":"DEPART","time":0,"transport_id":1,"kind":"TRUCK","location":"FACTORY","destination":"PORT","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
 {"event":"LOAD","time":0,"transport_id":2,"kind":"TRUCK","location":"FACTORY","duration":"0","cargo":[{"cargo_id":1,"destination":"B","origin":"FACTORY"}]}
@@ -6,20 +6,20 @@
 {"event":"ARRIVE","time":1,"transport_id":1,"kind":"TRUCK","location":"PORT","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
 {"event":"UNLOAD","time":1,"transport_id":1,"kind":"TRUCK","location":"PORT","duration":"0","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
 {"event":"DEPART","time":1,"transport_id":1,"kind":"TRUCK","location":"PORT","destination":"FACTORY","cargo":[]}
-{"event":"LOAD","time":1,"transport_id":3,"kind":"SHIP","location":"PORT","duration":"1","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
+{"event":"LOAD","time":1,"transport_id":3,"kind":"SHIP","location":"PORT","duration":"0","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
+{"event":"DEPART","time":1,"transport_id":3,"kind":"SHIP","location":"PORT","destination":"A","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
 {"event":"ARRIVE","time":2,"transport_id":1,"kind":"TRUCK","location":"FACTORY","cargo":[]}
-{"event":"DEPART","time":2,"transport_id":3,"kind":"SHIP","location":"PORT","destination":"A","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
 {"event":"LOAD","time":2,"transport_id":1,"kind":"TRUCK","location":"FACTORY","duration":"0","cargo":[{"cargo_id":2,"destination":"B","origin":"FACTORY"}]}
 {"event":"DEPART","time":2,"transport_id":1,"kind":"TRUCK","location":"FACTORY","destination":"B","cargo":[{"cargo_id":2,"destination":"B","origin":"FACTORY"}]}
 {"event":"ARRIVE","time":5,"transport_id":2,"kind":"TRUCK","location":"B","cargo":[{"cargo_id":1,"destination":"B","origin":"FACTORY"}]}
 {"event":"UNLOAD","time":5,"transport_id":2,"kind":"TRUCK","location":"B","duration":"0","cargo":[{"cargo_id":1,"destination":"B","origin":"FACTORY"}]}
 {"event":"DEPART","time":5,"transport_id":2,"kind":"TRUCK","location":"B","destination":"FACTORY","cargo":[]}
+{"event":"ARRIVE","time":5,"transport_id":3,"kind":"SHIP","location":"A","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
+{"event":"UNLOAD","time":5,"transport_id":3,"kind":"SHIP","location":"A","duration":"0","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
+{"event":"DEPART","time":5,"transport_id":3,"kind":"SHIP","location":"A","destination":"PORT","cargo":[]}
 {"event":"ARRIVE","time":7,"transport_id":1,"kind":"TRUCK","location":"B","cargo":[{"cargo_id":2,"destination":"B","origin":"FACTORY"}]}
 {"event":"UNLOAD","time":7,"transport_id":1,"kind":"TRUCK","location":"B","duration":"0","cargo":[{"cargo_id":2,"destination":"B","origin":"FACTORY"}]}
 {"event":"DEPART","time":7,"transport_id":1,"kind":"TRUCK","location":"B","destination":"FACTORY","cargo":[]}
-{"event":"ARRIVE","time":8,"transport_id":3,"kind":"SHIP","location":"A","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
-{"event":"UNLOAD","time":8,"transport_id":3,"kind":"SHIP","location":"A","duration":"1","cargo":[{"cargo_id":0,"destination":"A","origin":"FACTORY"}]}
-{"event":"DEPART","time":9,"transport_id":3,"kind":"SHIP","location":"A","destination":"PORT","cargo":[]}
+{"event":"ARRIVE","time":9,"transport_id":3,"kind":"SHIP","location":"PORT","cargo":[]}
 {"event":"ARRIVE","time":10,"transport_id":2,"kind":"TRUCK","location":"FACTORY","cargo":[]}
 {"event":"ARRIVE","time":12,"transport_id":1,"kind":"TRUCK","location":"FACTORY","cargo":[]}
-{"event":"ARRIVE","time":15,"transport_id":3,"kind":"SHIP","location":"PORT","cargo":[]}

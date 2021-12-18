@@ -71,4 +71,4 @@ let example2() =
     test [ A; B; B; B; A; B; A; A; A; B; B; B ] 39
 
 
-example2()
+example1()

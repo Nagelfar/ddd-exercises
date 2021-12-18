@@ -45,18 +45,18 @@ module Domain =
             match location1, location2 with
             | Factory, Port -> 1
             | Factory, Warehouse B -> 5
-            | Port, Warehouse A -> 6
+            | Port, Warehouse A -> 4
             | _ -> failwithf "Traveltime not configured for %A to %A" location1 location2
 
         let unLoadingTime =
             function
             | Truck _ -> 0
-            | Ship _ -> 1
+            | Ship _ -> 0
 
         let vehicleCapacity =
             function
             | Truck _ -> 1
-            | Ship _ -> 4
+            | Ship _ -> 1
 
         let initialVehicles =
             [ VehicleProvided(Truck(Identifier 1), Factory)
